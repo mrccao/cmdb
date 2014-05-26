@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>{{ Table.name.upper() }}</h1>
+    </div>
+    <a href="/add/{{ Table.name.lower() }}" type="button" class="btn btn-sm btn-success">Add {{ Table.name.upper() }}</a>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                {% for column in Table.displayed %}
+                    <th>
+                        {% if Table.order.asc %}
+                            <a href="{{ Table.name.lower() }}?sort={{ column }}&asc=0">
+                        {% else %}
+                            <a href="{{ Table.name.lower() }}?sort={{ column }}&asc=1">
+                        {% endif %}
+                            {{ column.replace("_", " ")|title }}
+                        </a>
+                    </th>
+                {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in Table.records %}
+                    <tr>
+                        {% for column in Table.displayed %}
+                            <td><a href="/edit/{{ Table.name.lower() }}/{{ row.id }}">{{ row.get_column(column) }}</a></td>
+                        {% endfor %}
+                        <td>
+                            <!-- Button trigger modal -->
+                            <button class="btn btn-danger btn-xs" data-toggle="modal" data-target="#{{ Table.name.lower() }}-{{ row.id }}">Delete</button>
+                        </td>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="{{ Table.name.lower() }}-{{ row.id }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                            <div class="modal-body">
+                                <h4 class="modal-title" id="myModalLabel">Delete {{ row.name }}?</h4>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                <a href="/delete/{{ Table.name.lower() }}/{{ row.id }}" type="button" class="btn btn-danger">Confirm</a>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                  </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}

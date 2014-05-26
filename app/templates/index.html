@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Network Automation</h1>
+</div>
+
+<div class="row">
+    {% for model in models %}
+        <div class="col-md-4">
+            <h3><a href="/view/{{ model.__name__.lower() }}">{{ model.__name__ }}</a></h3>
+            <p> {{ model.__doc__ }}</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}
