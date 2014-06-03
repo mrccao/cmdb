@@ -14,4 +14,28 @@
 {% block scripts %}
 {{ super() }}
 {{ pagedown.include_pagedown() }}
+<script>
+    {% for parent, child in cascade %}
+        $('select#{{ parent.__name__.lower() }}').find("option").remove();
+        $('select#{{ child.__name__.lower() }}').find("option").remove();
+        {% for parent_row in parent.query.all() %}
+            $('select#{{ parent.__name__.lower() }}').append("<option value={{ parent_row.id }}>{{ parent_row.name }}</option>");
+            {% for child_row in child.query.filter(child[parent.__name__.lower()].any(name=parent_row.name)) %}
+                $('select#{{ child.__name__.lower() }}').append("<option value={{ child_row.id }} parent='{{ parent_row.id }}' >{{ child_row.name }}</option>");
+            {% endfor %}
+        {% endfor %}
+        var parent_select = document.evaluate("//select[@id='{{ parent.__name__.lower() }}']", document, null, 9, null).singleNodeValue;
+        var child_select = document.evaluate("//select[@id='{{ child.__name__.lower() }}']", document, null, 9, null).singleNodeValue;
+        parent_select.onchange = function() {
+                parent_id = parent_select[parent_select.selectedIndex].value;
+                child_select.selectedIndex = -1;
+                $("select#{{ child.__name__.lower() }}").children().removeAttr("selected");
+                $("select#{{ child.__name__.lower() }}").children("option[parent!=" + parent_id + "]").hide();
+                $("select#{{ child.__name__.lower() }}").children("option[parent=" + parent_id + "]").show();
+        };
+        $("select#{{ parent.__name__.lower() }}").trigger("change")
+
+    {% endfor %}
+
+</script>
 {% endblock %}

@@ -15,7 +15,7 @@ if os.path.exists('.env'):
             os.environ[var[0]] = var[1]
 
 from app import create_app, db
-from app.models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory
+from app.models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, HardwareType
 from flask.ext.script import Manager, Shell
 from flask.ext.migrate import Migrate, MigrateCommand
 
@@ -25,7 +25,7 @@ migrate = Migrate(app, db)
 
 
 def make_shell_context():
-    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware)
+    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country)
 manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 
@@ -69,12 +69,13 @@ def deploy():
     # migrate database to latest revision
     upgrade()
 
-    system_categories = (SystemCategory, ["Unknown", "Load Balancer", "Router", "Switch", "Firewall", "Server"])
     
     init_models = list()
     init_models.append((Vendor, ["Unknown", "Cisco", "Avaya", "HP"]))
+    system_categories = (SystemCategory, ["Unknown", "Load Balancer", "Router", "Switch", "Firewall", "Server"])
     init_models.append(system_categories)
     init_models.append((L2Domain,["Unknown", "None"]))
+    init_models.append((HardwareType,["Chassis", "Line Card", "Power Supply", "SFP"]))
 
     for model, init_items in init_models:
         for init_item in init_items:
@@ -89,6 +90,20 @@ def deploy():
     sc = SystemCategory.query.filter_by(name="Unknown")
     system.system_category = sc
     db.session.add(system)
+
+    with open("iso-3166-2.txt", "r") as f:
+        country_codes = f.readlines()
+
+    country_codes.insert(0,"?? Unknown")
+
+    for line in country_codes:
+        line = line.split()
+        code = line[0]
+        country = " ".join(line[1::])
+        c = Country()
+        c.name = country
+        c.code = code
+        db.session.add(c)
 
     db.session.commit()
 

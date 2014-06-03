@@ -14,7 +14,6 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     DB_USER = os.environ.get('DB_USER')
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
-    
     FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
     FLASKY_MAIL_SENDER = 'Flasky Admin <flasky@example.com>'
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
@@ -30,11 +29,9 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    #SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-    #    'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
 
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'mysql://%s:%s@localhost/automation' % (DB_USER, DB_PASSWORD)
+        'mysql://%s:%s@localhost/automation' % (Config.DB_USER, Config.DB_PASSWORD)
 
 class TestingConfig(Config):
     TESTING = True

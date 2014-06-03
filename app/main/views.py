@@ -7,16 +7,28 @@ from flask import render_template, redirect, url_for, abort, flash, request,curr
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
 from . import main
-from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm
+from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm
 from .. import db
-from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory
+from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType
 from wtforms.widgets import Select
 
 @main.route('/', methods=['GET'])
 def index():
-    models = [L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory]
+    models = [L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, County, HardwareType]
     return render_template('index.html', models=models)
 
+@main.route('/delete/country/<id>', methods=['GET', 'POST'])
+def delete_country(id):
+    return generic_delete(id, Country())
+
+@main.route('/delete/hardwaretype/<id>', methods=['GET', 'POST'])
+def delete_hardwaretype(id):
+    return generic_delete(id, HardwareType())
+
+@main.route('/delete/county/<id>', methods=['GET', 'POST'])
+def delete_county(id):
+    return generic_delete(id, County())
+    
 @main.route('/delete/l2domain/<id>', methods=['GET', 'POST'])
 def delete_l2domain(id):
     return generic_delete(id, System())
@@ -41,6 +53,18 @@ def delete_hardware_model(id):
 def delete_hardware(id):
     return generic_delete(id, Hardware())
 
+@main.route('/add/county', methods=['GET', 'POST'])
+def add_county():
+    return generic_add(CountyForm(), County())
+
+@main.route('/add/hardwaretype', methods=['GET', 'POST'])
+def add_hardwaretype():
+    return generic_add(HardwareTypeForm(), HardwareType())
+
+@main.route('/add/country', methods=['GET', 'POST'])
+def add_country():
+    return generic_add(CountyForm(), County())
+
 @main.route('/add/l2domain', methods=['GET', 'POST'])
 def add_l2domain():
     return generic_add(L2DomainForm(), L2Domain())
@@ -64,8 +88,20 @@ def add_hardware_model():
 
 @main.route('/add/hardware', methods=['GET', 'POST'])
 def add_hardware():
-    form = HardwareForm()
-    return generic_add(HardwareForm(), Hardware())
+    cascade = [(Vendor, HardwareModel)]
+    return generic_add(HardwareForm(), Hardware(), cascade)
+
+@main.route('/view/county', methods=['GET', 'POST'])
+def view_county():
+    return generic_view(County(),["name", "country"])
+
+@main.route('/view/hardwaretype', methods=['GET', 'POST'])
+def view_hardwaretype():
+    return generic_view(HardwareType(),["name"])
+
+@main.route('/view/country', methods=['GET', 'POST'])
+def view_country():
+    return generic_view(Country(),["name", "code"])
 
 @main.route('/view/l2domain', methods=['GET', 'POST'])
 def view_l2domain():
@@ -77,7 +113,7 @@ def view_systemcategory():
 
 @main.route('/view/system', methods=['GET', 'POST'])
 def view_system():
-    return generic_view(System(),["name", "management_ip", "l2domain"])
+    return generic_view(System(),["name", "managementip", "l2domain"])
 
 @main.route('/view/vendor', methods=['GET', 'POST'])
 def view_vendor():
@@ -85,11 +121,23 @@ def view_vendor():
 
 @main.route('/view/hardwaremodel', methods=['GET', 'POST'])
 def view_hardwaremodel():
-    return generic_view(HardwareModel(),["name", "vendor", "description"])
+    return generic_view(HardwareModel(),["name", "vendor", "hardwaretype"])
 
 @main.route('/view/hardware', methods=['GET', 'POST'])
 def view_hardware():
-    return generic_view(Hardware(),["name", "notes"])
+    return generic_view(Hardware(),["name", "system", "vendor", "hardwaremodel"])
+
+@main.route('/edit/county/<id>', methods=['GET', 'POST'])
+def edit_county(id):
+    return generic_edit(id, County(), CountyForm())
+
+@main.route('/edit/hardwaretype/<id>', methods=['GET', 'POST'])
+def edit_hardwaretype(id):
+    return generic_edit(id, HardwareType(), HardwareTypeForm())
+
+@main.route('/edit/country/<id>', methods=['GET', 'POST'])
+def edit_country(id):
+    return generic_edit(id, Country(), CountryForm())
 
 @main.route('/edit/l2domain/<id>', methods=['GET', 'POST'])
 def edit_l2domain(id):
@@ -133,19 +181,23 @@ def update_row(form, model, add=False):
             else:
                 setattr(model, field, getattr(form, field).data)
     if add:
+        model.id = None
         db.session.add(model)
+    db.session.commit()
     return True
 
 
-def generic_add(form, model):
+def generic_add(form, model, cascade=None):
     form = populate_one_to_many_choices(form, model)
     if form.validate_on_submit():
         update_row(form, model, add=True)
         redirect_url = ".view_%s" % type(model).__name__.lower()
         return redirect(url_for(redirect_url))
-    return render_template('edit_model.html', form=form, Table=model)
+    if cascade is None:
+        cascade = list()
+    return render_template('edit_model.html', form=form, Table=model, cascade=cascade)
 
-def generic_edit(id, model, form):
+def generic_edit(id, model, form, cascade=None):
     model = model.query.filter_by(id=id).first()
     form = populate_one_to_many_choices(form, model)
     redirect_url = ".view_%s" % type(model).__name__.lower()
@@ -163,7 +215,9 @@ def generic_edit(id, model, form):
                         form_field.data = getattr(model, field)[0].id
                 else:
                     form_field.data = getattr(model, field)
-    return render_template('edit_model.html', form=form, Table=type(model))
+    if cascade is None:
+        cascade = list()
+    return render_template('edit_model.html', form=form, Table=type(model), cascade=cascade)
 
 def generic_view(model, displayed_fields=None):
     class table_view:
@@ -178,11 +232,11 @@ def generic_view(model, displayed_fields=None):
         class order:
             by = "id"
             if "name" in model.get_columns():
-                by = model.name
+                by = "name"
             _sort = request.args.get("sort")
             if _sort:
                 by = model.__dict__[_sort]
-            _asc = request.args.get("asc") or 0
+            _asc = request.args.get("asc") or 1
             asc = int(_asc)
     table_view.records = model.query.order_by(table_view.order.by).all()
     if not table_view.order.asc:

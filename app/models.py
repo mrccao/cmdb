@@ -12,7 +12,6 @@ from . import db, login_manager
 class GenericModel(object):
     def get_columns(self):
         columns = self.metadata.tables.get(self.__class__.__name__).columns.keys()
-        #columns = filter(lambda a: a != "id", columns)
         columns = columns + self.get_one_to_many_columns()
         return columns
         
@@ -36,8 +35,52 @@ class GenericModel(object):
                 one_to_many_columns.append(column)
         return one_to_many_columns
 
+class Address(db.Model, GenericModel):
+    __tablename__ = "Address"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    zipcode = db.Column(db.String(64), unique=True)
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+class HardwareType(db.Model, GenericModel):
+    __tablename__ = "HardwareType"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+class County(db.Model, GenericModel):
+    __tablename__ = "County"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    country = db.relationship("Country", backref="country_county", lazy="dynamic")
+    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+class Country(db.Model, GenericModel):
+    __tablename__ = "Country"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    code = db.Column(db.String(64), unique=True)
+    county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
+    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+
 class L2Domain(db.Model, GenericModel):
-    __tablename__ = 'L2Domain'
+    __tablename__ = "L2Domain"
     __doc__ = "Layer 2 Domain"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
@@ -46,10 +89,10 @@ class L2Domain(db.Model, GenericModel):
     order_by = "name"
     
     def __repr__(self):
-        return '<CSB %r>' % self.name
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 class SystemCategory(db.Model, GenericModel):
-    __tablename__ = 'SystemCategory'
+    __tablename__ = "SystemCategory"
     __doc__ = "System Category"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
@@ -59,58 +102,60 @@ class SystemCategory(db.Model, GenericModel):
     order_by = "name"
     
     def __repr__(self):
-        return '<SystemCategory %r>' % self.name
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 
 class Hardware(db.Model, GenericModel):
-    __tablename__ = 'Hardware'
-    __doc__ = "Hardware"
+    __tablename__ = "Hardware"
+    __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column("serial", db.String(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     vendor = db.relationship("Vendor", backref="vendor_hardware", lazy="dynamic")
-    #vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     system = db.relationship("System", backref="system_hardware", lazy="dynamic")
-    hardware_model = db.relationship("HardwareModel", backref="hardware_model_hardware", lazy="dynamic")
+    hardwaremodel = db.relationship("HardwareModel", backref="hardware_model_hardware", lazy="dynamic")
+    county = db.relationship("County", backref="county_hardware", lazy="dynamic")
+    country = db.relationship("Country", backref="country_hardware", lazy="dynamic")
     notes = db.Column(db.String(255), unique=False)
     order_by = "name"
     def __repr__(self):
-        return '<Hardware %r>' % self.name
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 class HardwareModel(db.Model, GenericModel):
-    __tablename__ = 'HardwareModel'
+    __tablename__ = "HardwareModel"
     __doc__ = "Hardware Model"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    description = db.Column(db.String(255), unique=False)
+    description = db.Column(db.String(255))
     vendor = db.relationship("Vendor", backref="vendor_hardware_model", lazy="dynamic")
+    hardwaretype = db.relationship("HardwareType", backref="hardware_type_hardware", lazy="dynamic")
     hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
     order_by = "name"
     def __repr__(self):
-        return '<HardwareModel %r>' % self.name
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 class Vendor(db.Model, GenericModel):
-    __tablename__ = 'Vendor'
-    __doc__ = "Vendor"
+    __tablename__ = "Vendor"
+    __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
     hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
     order_by = "name"
     def __repr__(self):
-        return '<Vendor %r>' % self.name
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 
 class System(db.Model, GenericModel):
-    __tablename__ = 'System'
-    __doc__ = "System"
+    __tablename__ = "System"
+    __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    management_ip = db.Column(db.String(64), unique=True)
+    managementip = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(255), unique=False)
-    system_category = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
+    systemcategory = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
     l2domain = db.relationship("L2Domain", backref="system", lazy="dynamic")
     hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
     order_by = "name"
     def __repr__(self):
-        return '<System %r>' % self.name
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 

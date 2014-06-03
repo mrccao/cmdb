@@ -5,7 +5,7 @@ from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
 from wtforms.widgets import Select, HiddenInput
 from flask.ext.pagedown.fields import PageDownField
-from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory
+from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType
 
 
 class Unique(object):
@@ -35,6 +35,27 @@ class Unique(object):
         if check and (id is None or id != check.id):
             raise ValidationError(self.message)
 
+class HardwareTypeForm(Form):
+    id = HiddenField()
+    name = StringField('Hardware Type', validators=[Required(), Unique(HardwareType, HardwareType.name)])
+    submit = SubmitField('Submit')
+
+
+class CountyForm(Form):
+    id = HiddenField()
+    name = StringField('County / Province / State', validators=[Required(), Unique(County, County.name)])
+    #default_country = Country.query.filter_by(code="DK").first().id
+    country = SelectField('Country', default=59,coerce=int)
+    submit = SubmitField('Submit')
+
+
+class CountryForm(Form):
+    id = HiddenField()
+    name = StringField('Name', validators=[Required(), Unique(Country, Country.name)])
+    code = StringField('Code', validators=[Length(max=255)])
+    submit = SubmitField('Submit')
+
+
 class L2DomainForm(Form):
     id = HiddenField()
     name = StringField('Name', validators=[Required(), Unique(L2Domain, L2Domain.name)])
@@ -52,7 +73,7 @@ class SystemForm(Form):
     id = HiddenField()
     name = StringField('System Name', validators=[Required(), Unique(System, System.name), Length(min=2, max=64)])
     management_ip = StringField('Mangement IP', validators=[Required(), Unique(System, System.name), IPAddress()])
-    system_category = SelectField('SystemCategory', coerce=int)
+    systemcategory = SelectField('SystemCategory', coerce=int)
     l2domain = SelectField('Layer 2 Domain', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
@@ -61,8 +82,10 @@ class HardwareForm(Form):
     id = HiddenField()
     name = StringField('Serial Number', validators=[Required(), Unique(Hardware, Hardware.name), Length(min=2, max=64)])
     system = SelectField('System', coerce=int, widget=Select(multiple=True))
-    vendor = SelectField('Vendor', coerce=int)
-    hardware_model = SelectField('HardwareModel', coerce=int)
+    vendor = SelectField('Vendor', coerce=int, )
+    hardwaremodel = SelectField('HardwareModel', coerce=int)
+    country = SelectField('Country', default=1, coerce=int)
+    county = SelectField('County', coerce=int)
     notes = StringField('Notes', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
@@ -74,7 +97,9 @@ class VendorForm(Form):
 class HardwareModelForm(Form):
     id = HiddenField()
     name = StringField('Hardware Model Name', validators=[Required(), Unique(HardwareModel, HardwareModel.name), Length(min=2, max=64)])
-    vendor = SelectField('Vendor', coerce=int)
+    #default_vendor = Vendor.query.filter_by(name="Cisco").first().id
+    vendor = SelectField('Vendor', default=2, coerce=int)
+    hardwaretype = SelectField('HardwareType', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
