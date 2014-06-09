@@ -16,26 +16,30 @@
 {{ pagedown.include_pagedown() }}
 <script>
     {% for parent, child in cascade %}
-        $('select#{{ parent.__name__.lower() }}').find("option").remove();
-        $('select#{{ child.__name__.lower() }}').find("option").remove();
-        {% for parent_row in parent.query.all() %}
-            $('select#{{ parent.__name__.lower() }}').append("<option value={{ parent_row.id }}>{{ parent_row.name }}</option>");
-            {% for child_row in child.query.filter(child[parent.__name__.lower()].any(name=parent_row.name)) %}
-                $('select#{{ child.__name__.lower() }}').append("<option value={{ child_row.id }} parent='{{ parent_row.id }}' >{{ child_row.name }}</option>");
-            {% endfor %}
-        {% endfor %}
-        var parent_select = document.evaluate("//select[@id='{{ parent.__name__.lower() }}']", document, null, 9, null).singleNodeValue;
-        var child_select = document.evaluate("//select[@id='{{ child.__name__.lower() }}']", document, null, 9, null).singleNodeValue;
-        parent_select.onchange = function() {
-                parent_id = parent_select[parent_select.selectedIndex].value;
-                child_select.selectedIndex = -1;
-                $("select#{{ child.__name__.lower() }}").children().removeAttr("selected");
-                $("select#{{ child.__name__.lower() }}").children("option[parent!=" + parent_id + "]").hide();
-                $("select#{{ child.__name__.lower() }}").children("option[parent=" + parent_id + "]").show();
-        };
-        $("select#{{ parent.__name__.lower() }}").trigger("change")
+        var parent_name = "{{ parent.__name__.lower() }}";
+        var child_name = "{{ child.__name__.lower() }}";
+        var parent_selector = "select#" + parent_name;
+        var child_selector = "select#" + child_name;
+        $(parent_selector).attr("child", child_name);
+        $(child_selector).attr("parent", parent_name);
+        $(child_selector).find("option").remove();
 
+        $(parent_selector).change( function() {
+            parent_name = $(this).attr("id");
+            child_name = $(this).attr("child");
+            parent_selector = "select#" + parent_name;
+            child_selector = "select#" + child_name;
+            parent_id = $(this).find(":selected").val();
+            console.log("Fired " + parent_name);
+
+            $.get( "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id, function( data ) {
+                $(child_selector).find("option").remove();
+                $(child_selector).append(data);
+            });
+            $(child_selector).children().removeAttr("selected");
+            $(child_selector + " option:visible").first().attr("selected", "selected");
+        });
+        $(parent_selector).trigger("change")
     {% endfor %}
-
 </script>
 {% endblock %}
