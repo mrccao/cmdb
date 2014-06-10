@@ -203,7 +203,6 @@ def generic_add(form, model, cascade=None):
         return redirect(url_for(redirect_url))
     if cascade is None:
         cascade = list()
-    cascade = None
     return render_template('edit_model.html', form=form, Table=model, cascade=cascade)
 
 def generic_edit(id, model, form, cascade=None):
@@ -245,7 +244,6 @@ class AddView(View):
         cascade = []
         if hasattr(self.model, "cascade"):
             cascade = self.model.cascade
-            print cascade
         return generic_add(self.form(), self.model(), cascade=cascade)
 
 class DeleteView(View):
