@@ -10,23 +10,24 @@ from app.exceptions import ValidationError
 from . import db, login_manager
 
 class GenericModel(object):
-    def get_columns_v0_1(self):
-        columns = self.metadata.tables.get(self.__class__.__name__).columns.keys()
-        columns = columns + self.get_one_to_many_columns()
-        return columns
-
-    def get_columns(self, one_to_many_only=False):
+    def get_columns(self, one_to_many=False, foreign_key=False):
         columns = list()
-        for att in dir(type(self)):
-            if getattr(type(self), att).__class__.__name__ == "InstrumentedAttribute":
-                if not one_to_many_only:
+        model_type = type(self)
+        for att in dir(model_type):
+            if hasattr(getattr(model_type, att), "property"):
+                if not one_to_many and not foreign_key:
                     columns.append(att)
-            if getattr(self, att).__class__.__name__ == "AppenderBaseQuery":
-                columns.append(att)
+                elif one_to_many and hasattr(getattr(model_type, att).property, "mapper"):
+                    columns.append(att)
+                if foreign_key and hasattr(getattr(model_type, att).property, "expression"):
+                    if getattr(model_type, att).property.expression.foreign_keys:
+                        columns.append(att)
         return columns
         
     def get_column(self, name):
         value = getattr(self, name)
+        if value is None:
+            raise Exception()
         if name in self.get_one_to_many_columns():
             try:
                 value = value[0]
@@ -39,7 +40,10 @@ class GenericModel(object):
         return value
 
     def get_one_to_many_columns(self):
-        return self.get_columns(one_to_many_only=True)
+        return self.get_columns(one_to_many=True)
+
+    def get_foreign_keys(self):
+        return self.get_columns(foreign_key=True)
 
 class Address(db.Model, GenericModel):
     __tablename__ = "Address"
@@ -57,7 +61,7 @@ class HardwareType(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
+    hardware_model = db.relationship("HardwareModel", backref="hardware_type", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):
@@ -68,8 +72,7 @@ class County(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    country = db.relationship("Country", backref="country_county", lazy="dynamic")
-    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):
@@ -81,8 +84,8 @@ class Country(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     code = db.Column(db.String(64), unique=True)
-    county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
-    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    county = db.relationship("County", backref="country", lazy="dynamic")
+    #hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):
@@ -122,8 +125,8 @@ class Vendor(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
-    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
+    hardware_model = db.relationship("HardwareModel", backref="vendor", lazy="dynamic")
+    hardware = db.relationship("Hardware", backref="vendor", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):
@@ -135,10 +138,10 @@ class HardwareModel(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(255))
-    vendor = db.relationship("Vendor", backref="vendor_hardware_model", lazy="dynamic")
-    hardwaretype = db.relationship("HardwareType", backref="hardware_type_hardware", lazy="dynamic")
-    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
-    display_fields = ["name", "vendor", "hardwaretype"]
+    vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
+    hardware = db.relationship("Hardware", backref="hardware_model", lazy="dynamic")
+    hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))
+    display_fields = ["name", "vendor_id", "hardware_type_id"]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
@@ -149,11 +152,11 @@ class Hardware(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    vendor = db.relationship("Vendor", backref="vendor_hardware", lazy="dynamic")
+    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
     system = db.relationship("System", backref="system_hardware", lazy="dynamic")
-    hardwaremodel = db.relationship("HardwareModel", backref="hardware_model_hardware", lazy="dynamic")
-    county = db.relationship("County", backref="county_hardware", lazy="dynamic")
-    country = db.relationship("Country", backref="country_hardware", lazy="dynamic")
+    vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
+    #county = db.relationship("County", backref="county_hardware", lazy="dynamic")
+    #country = db.relationship("Country", backref="country_hardware", lazy="dynamic")
     notes = db.Column(db.String(255), unique=False)
     order_by = "name"
     display_fields = ["name", "system", "vendor", "hardwaremodel"]

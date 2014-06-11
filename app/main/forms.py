@@ -99,7 +99,7 @@ class HardwareModelForm(Form):
     name = StringField('Hardware Model Name', validators=[Required(), Unique(HardwareModel, HardwareModel.name), Length(min=2, max=64)])
     #default_vendor = Vendor.query.filter_by(name="Cisco").first().id
     vendor = SelectField('Vendor', default=2, coerce=int)
-    hardwaretype = SelectField('HardwareType', coerce=int)
+    hardware_type = SelectField('HardwareType', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 

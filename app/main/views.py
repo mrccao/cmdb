@@ -43,6 +43,8 @@ def populate_one_to_many_choices(form, model):
     model_instance = model()
     model_type = model
     for column in model_instance.get_one_to_many_columns():
+        if not hasattr(form, column):
+            continue
         related_model = getattr(model_type, column).property.mapper.primary_base_mapper.entity
         choices = [(r_column.id, getattr(r_column, related_model.order_by)) for r_column in related_model.query.order_by(related_model.order_by)]
         setattr(getattr(form, column), "choices", choices)
@@ -50,12 +52,16 @@ def populate_one_to_many_choices(form, model):
 
 def update_row(form, model, add=False):
     changed = False
+    foreign_keys = model.get_foreign_keys()
+    one_to_many_keys = model.get_one_to_many_columns()
     for field in model.get_columns():
         if field in form.__dict__:
-            if field in model.get_one_to_many_columns():
-                related_model = getattr(model, field).column_descriptions[0]["type"]
-                setattr(model, field, related_model.query.filter_by(id=getattr(form, field).data))
-            else:
+            #if field in foreign_keys:
+            if field in one_to_many_keys:
+                related_model = getattr(type(model), field).property.mapper.primary_base_mapper.entity
+                related_model = related_model.query.filter_by(id=getattr(form, field).data).first()
+                setattr(model, field, related_model)
+            elif field not in one_to_many_keys:
                 setattr(model, field, getattr(form, field).data)
     if add:
         model.id = None
