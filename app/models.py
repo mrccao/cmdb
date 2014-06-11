@@ -15,10 +15,13 @@ class GenericModel(object):
         columns = columns + self.get_one_to_many_columns()
         return columns
 
-    def get_columns(self):
+    def get_columns(self, one_to_many_only=False):
         columns = list()
-        for att in dir(self):
-            if getattr(self, att).__class__.__name__ == "InstrumentedAttribute":
+        for att in dir(type(self)):
+            if getattr(type(self), att).__class__.__name__ == "InstrumentedAttribute":
+                if not one_to_many_only:
+                    columns.append(att)
+            if getattr(self, att).__class__.__name__ == "AppenderBaseQuery":
                 columns.append(att)
         return columns
         
@@ -36,11 +39,7 @@ class GenericModel(object):
         return value
 
     def get_one_to_many_columns(self):
-        one_to_many_columns = list()
-        for column in dir(self):
-            if getattr(self, column).__class__.__name__ == "AppenderBaseQuery":
-                one_to_many_columns.append(column)
-        return one_to_many_columns
+        return self.get_columns(one_to_many_only=True)
 
 class Address(db.Model, GenericModel):
     __tablename__ = "Address"
@@ -118,6 +117,18 @@ class SystemCategory(db.Model, GenericModel):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
 
+class Vendor(db.Model, GenericModel):
+    __tablename__ = "Vendor"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
+    display_fields = ["name"]
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
 class HardwareModel(db.Model, GenericModel):
     __tablename__ = "HardwareModel"
     __doc__ = "Hardware Model"
@@ -132,17 +143,6 @@ class HardwareModel(db.Model, GenericModel):
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
-class Vendor(db.Model, GenericModel):
-    __tablename__ = "Vendor"
-    __doc__ = __tablename__
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
-    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
-    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
-    display_fields = ["name"]
-    order_by = "name"
-    def __repr__(self):
-        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 class Hardware(db.Model, GenericModel):
     __tablename__ = "Hardware"
