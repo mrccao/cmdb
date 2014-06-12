@@ -29,7 +29,7 @@
                 {% for row in Table.records %}
                     <tr>
                         {% for column in Table.displayed %}
-                            <td><a href="/edit/{{ Table.name.lower() }}/{{ row.id }}">{{ row.get_column(column) }}</a></td>
+                            <td><a href="/edit/{{ Table.name.lower() }}/{{ row.id }}">{{ row.display_column(column) }}</a></td>
                         {% endfor %}
                         <td>
                             <!-- Button trigger modal -->

@@ -24,19 +24,15 @@ class GenericModel(object):
                         columns.append(att)
         return columns
         
-    def get_column(self, name):
+    def display_column(self, name):
+        """ Display a human friendly row column name """
         value = getattr(self, name)
-        if value is None:
-            raise Exception()
-        if name in self.get_one_to_many_columns():
-            try:
-                value = value[0]
-                if "name" not in dir(value):
-                    value = value.get_columns()[0]
-                else:
+        # if a related class then display the name of the related class
+        if hasattr(type(value), "__bases__"):
+            base_cls = [str(base_cls.__bases__) for base_cls in type(value).__bases__]
+            for base_cl in base_cls:
+                if "flask_sqlalchemy.Model" in base_cl:
                     value = value.name
-            except IndexError:
-                value = None
         return value
 
     def get_one_to_many_columns(self):
@@ -141,7 +137,7 @@ class HardwareModel(db.Model, GenericModel):
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     hardware = db.relationship("Hardware", backref="hardware_model", lazy="dynamic")
     hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))
-    display_fields = ["name", "vendor_id", "hardware_type_id"]
+    display_fields = ["name", "vendor", "hardware_type"]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)

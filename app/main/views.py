@@ -100,7 +100,7 @@ def generic_edit(id, form, model, cascade=None):
                         form_field.data = map(lambda x: x.id, getattr(model_instance, field))
                     #  Single Select
                     else:
-                        form_field.data = getattr(model_instance, field)[0].id
+                        form_field.data = getattr(model_instance, field).id
                 else:
                     form_field.data = getattr(model_instance, field)
     if cascade is None:
@@ -239,15 +239,9 @@ for model in model_cls:
         if "%sform" % model.__name__.lower() == form.__name__.lower():
             model_forms.append((model, form))
             
-#generate_models = ["hardwaremodel", "hardware"]
 for model, form in model_forms:
     name = model.__name__.lower()
-    #if name not in generate_models:
-        #continue
     main.add_url_rule('/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
     main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
     main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, model, form))
     main.add_url_rule('/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
-
-
-
