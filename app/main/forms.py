@@ -1,6 +1,6 @@
 from flask.ext.wtf import Form 
 from wtforms import StringField, TextAreaField, BooleanField, SelectField,\
-    SubmitField, IntegerField, HiddenField, FileField
+    SubmitField, IntegerField, HiddenField, FileField, SelectMultipleField
 from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
 from wtforms.widgets import Select, HiddenInput
@@ -73,7 +73,7 @@ class SystemForm(Form):
     id = HiddenField()
     name = StringField('System Name', validators=[Required(), Unique(System, System.name), Length(min=2, max=64)])
     management_ip = StringField('Mangement IP', validators=[Required(), Unique(System, System.name), IPAddress()])
-    systemcategory = SelectField('SystemCategory', coerce=int)
+    system_category = SelectField('SystemCategory', coerce=int)
     l2domain = SelectField('Layer 2 Domain', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
@@ -81,11 +81,11 @@ class SystemForm(Form):
 class HardwareForm(Form):
     id = HiddenField()
     name = StringField('Serial Number', validators=[Required(), Unique(Hardware, Hardware.name), Length(min=2, max=64)])
-    system = SelectField('System', coerce=int, widget=Select(multiple=True))
+    system = SelectMultipleField('System', coerce=int)
     vendor = SelectField('Vendor', coerce=int, )
-    hardwaremodel = SelectField('HardwareModel', coerce=int)
-    country = SelectField('Country', default=1, coerce=int)
-    county = SelectField('County', coerce=int)
+    hardware_model = SelectField('HardwareModel', coerce=int)
+    #country = SelectField('Country', default=1, coerce=int)
+    #county = SelectField('County', coerce=int)
     notes = StringField('Notes', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 

@@ -16,8 +16,8 @@
 {{ pagedown.include_pagedown() }}
 <script>
     {% for parent, child in cascade %}
-        var parent_name = "{{ parent.__name__.lower() }}";
-        var child_name = "{{ child.__name__.lower() }}";
+        var parent_name = "{{ parent }}";
+        var child_name = "{{ child }}";
         var parent_selector = "select#" + parent_name;
         var child_selector = "select#" + child_name;
         $(parent_selector).attr("child", child_name);
@@ -51,14 +51,12 @@
                 var child_name = $(current).attr("child");
                 current = "select#" + child_name;
                 var parent_id = $("select#" + parent_name).find(":selected").val();
-
+                
                 var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
                 var new_children;
                 // Load cached queries or make an Ajax call
                 if ( $(current).data(get_url) !== undefined ) {
                     new_children = $(current).data(get_url);
-                    console.log("Bang");
-                    console.log(new_children);
                 } else {
                     new_children = $.ajax({
                        type: "GET",

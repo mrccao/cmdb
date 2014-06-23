@@ -2,12 +2,16 @@ from datetime import datetime
 import hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from sqlalchemy import Table, Column, Integer, String, ForeignKey, Sequence
+from sqlalchemy.ext.declarative import declarative_base
 from markdown import markdown
 import bleach
 from flask import current_app, request, url_for
 from flask.ext.login import UserMixin, AnonymousUserMixin
 from app.exceptions import ValidationError
 from . import db, login_manager
+
+Base = declarative_base()
 
 class GenericModel(object):
     def get_columns(self, one_to_many=False, foreign_key=False):
@@ -26,9 +30,26 @@ class GenericModel(object):
         
     def display_column(self, name):
         """ Display a human friendly row column name """
+        maximum_single_results = 3
         value = getattr(self, name)
         # if a related class then display the name of the related class
-        if hasattr(type(value), "__bases__"):
+        if hasattr(type(value), "all"):
+            results = list()
+            for record in value.all():
+                if len(results) > maximum_single_results:
+                    results.append("...")
+                    break
+                results.append(record.name)
+            value = ", ".join(results)
+        elif hasattr(value, "__class__") and "InstrumentedList" in value.__class__.__name__:
+            results = list()
+            for record in value:
+                if len(results) > maximum_single_results:
+                    results.append("...")
+                    break
+                results.append(record.name)
+            value = ", ".join(results)
+        elif hasattr(type(value), "__bases__"):
             base_cls = [str(base_cls.__bases__) for base_cls in type(value).__bases__]
             for base_cl in base_cls:
                 if "flask_sqlalchemy.Model" in base_cl:
@@ -94,7 +115,7 @@ class L2Domain(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(255), unique=False)
-    system_id = db.Column(db.Integer, db.ForeignKey("System.id"))
+    system = db.relationship("System", backref="l2domain", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     
@@ -142,6 +163,11 @@ class HardwareModel(db.Model, GenericModel):
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
+systems_hardware = db.Table('systems_hardware',
+        db.Column('system_id', db.Integer, db.ForeignKey('System.id')),
+        db.Column('hardware_id', db.Integer, db.ForeignKey('Hardware.id'))
+       )
+
 
 class Hardware(db.Model, GenericModel):
     __tablename__ = "Hardware"
@@ -149,14 +175,15 @@ class Hardware(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
-    system = db.relationship("System", backref="system_hardware", lazy="dynamic")
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     #county = db.relationship("County", backref="county_hardware", lazy="dynamic")
     #country = db.relationship("Country", backref="country_hardware", lazy="dynamic")
     notes = db.Column(db.String(255), unique=False)
+    #system = db.relationship("System", backref="hardware", lazy="dynamic")
+    #system_id = db.Column(db.Integer, db.ForeignKey("System.id"))
     order_by = "name"
-    display_fields = ["name", "system", "vendor", "hardwaremodel"]
-    cascade = [(Vendor, HardwareModel), (Country, County)]
+    display_fields = ["name", "system", "vendor"]
+    cascade = [("vendor", "hardware_model"), ("country", "county")]
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
@@ -165,12 +192,14 @@ class System(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    managementip = db.Column(db.String(64), unique=True)
+    management_ip = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(255), unique=False)
-    systemcategory = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
-    l2domain = db.relationship("L2Domain", backref="system", lazy="dynamic")
-    hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
-    display_fields = ["name", "managementip", "l2domain"]
+    system_category = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
+    l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))
+    #hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    #hardware = db.relationship("Hardware", backref="system", lazy="dynamic")
+    hardware = db.relationship("Hardware", secondary=systems_hardware, backref="system", lazy="dynamic")
+    display_fields = ["name", "management_ip", "l2domain"]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)

@@ -22,6 +22,8 @@ def index():
 
 @main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
 def parent_child(parent, child, parent_id):
+    parent = parent.replace("_", "")
+    child = child.replace("_", "")
     parent_cls = None
     child_cls = None
     for name, cls in inspect.getmembers(sys.modules["app.models"]):
@@ -33,20 +35,22 @@ def parent_child(parent, child, parent_id):
         if parent_cls and child_cls:
             break
     options = ""
-    for row in child_cls.query.filter(getattr(child_cls, parent).any(id=parent_id)):
+    for row in child_cls.query.filter(getattr(child_cls, parent).has(id=parent_id)):
         options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)
     return options
 
 
 def populate_one_to_many_choices(form, model):
     # Fill in the form choices from the models
-    model_instance = model()
-    model_type = model
+    model_instance = model
+    model_type = type(model)
     for column in model_instance.get_one_to_many_columns():
         if not hasattr(form, column):
             continue
         related_model = getattr(model_type, column).property.mapper.primary_base_mapper.entity
         choices = [(r_column.id, getattr(r_column, related_model.order_by)) for r_column in related_model.query.order_by(related_model.order_by)]
+        if choices is None:
+            choices = list()
         setattr(getattr(form, column), "choices", choices)
     return form
 
@@ -56,11 +60,16 @@ def update_row(form, model, add=False):
     one_to_many_keys = model.get_one_to_many_columns()
     for field in model.get_columns():
         if field in form.__dict__:
-            #if field in foreign_keys:
             if field in one_to_many_keys:
                 related_model = getattr(type(model), field).property.mapper.primary_base_mapper.entity
-                related_model = related_model.query.filter_by(id=getattr(form, field).data).first()
-                setattr(model, field, related_model)
+                if type(getattr(form, field).data) is list:
+                    data = related_model.query.filter(related_model.id.in_(getattr(form, field).data))
+                else:
+                    data = related_model.query.filter_by(id=getattr(form, field).data)
+                try:
+                    setattr(model, field, data.all())
+                except AttributeError:
+                    setattr(model, field, data.first())
             elif field not in one_to_many_keys:
                 setattr(model, field, getattr(form, field).data)
     if add:
@@ -73,7 +82,9 @@ def update_row(form, model, add=False):
 def generic_add(form, model, cascade=None):
     model_type = model
     model_instance = model()
-    form = populate_one_to_many_choices(form, model_type)
+    #if request.method == 'POST':
+        #raise Exception()
+    form = populate_one_to_many_choices(form, model_instance)
     if form.validate_on_submit():
         update_row(form, model_instance, add=True)
         redirect_url = "/view/%s" % model_type.__name__.lower()
@@ -85,22 +96,33 @@ def generic_add(form, model, cascade=None):
 def generic_edit(id, form, model, cascade=None):
     model_type = model
     model_instance = model.query.filter_by(id=id).first()
-    form = populate_one_to_many_choices(form, model_type)
-    redirect_url = "/view/%s" % model_type.__name__.lower()
+    form = populate_one_to_many_choices(form, model_instance)
     if form.validate_on_submit():
+        redirect_url = "/view/%s" % model_type.__name__.lower()
         update_row(form, model_instance)
         return redirect(redirect_url)
     else:
+        # Populate the form
         for field in model_instance.get_columns():
             if field in form.__dict__:
                 form_field = getattr(form, field)
                 if field in model_instance.get_one_to_many_columns():
                     #  Multi Select
-                    if form_field.widget.__class__ is Select and form_field.widget.multiple:
-                        form_field.data = map(lambda x: x.id, getattr(model_instance, field))
+                    #elif hasattr(value, "__class__") and "InstrumentedList" in value.__class__.__name__:
+                    #if form_field.widget.__class__ is Select and form_field.widget.multiple:
+                    data = getattr(model_instance, field)
+                    if hasattr(data, "__class__") and "InstrumentedList" in data.__class__.__name__:
+                        form_field.data = map(lambda x: x.id, data)
                     #  Single Select
                     else:
-                        form_field.data = getattr(model_instance, field).id
+                        if hasattr(data, "first"):
+                            data = data.first()
+                            if data is not None:
+                                form_field.data = data.id
+                            else:
+                                form_field.data = data
+                        else:
+                            form_field.data = data.id
                 else:
                     form_field.data = getattr(model_instance, field)
     if cascade is None:

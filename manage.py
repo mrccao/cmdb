@@ -25,7 +25,7 @@ migrate = Migrate(app, db)
 
 
 def make_shell_context():
-    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country)
+    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country, HardwareType=HardwareType)
 manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 
@@ -74,7 +74,7 @@ def deploy():
     init_models.append((Vendor, ["Unknown", "Cisco", "Avaya", "HP"]))
     system_categories = (SystemCategory, ["Unknown", "Load Balancer", "Router", "Switch", "Firewall", "Server"])
     init_models.append(system_categories)
-    init_models.append((L2Domain,["Unknown", "None"]))
+    init_models.append((L2Domain,["Unknown", "None","L2D"]))
     init_models.append((HardwareType,["Chassis", "Line Card", "Power Supply", "SFP"]))
 
     for model, init_items in init_models:
@@ -86,7 +86,7 @@ def deploy():
     db.session.commit()
     system = System()
     system.name = "Unknown"
-    system.l2domain = [L2Domain.query.first()]
+    system.l2domain = L2Domain.query.first()
     sc = SystemCategory.query.filter_by(name="Unknown")
     system.system_category = sc
     db.session.add(system)
