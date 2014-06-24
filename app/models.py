@@ -145,6 +145,7 @@ class Vendor(db.Model, GenericModel):
     name = db.Column(db.String(64), unique=True)
     hardware_model = db.relationship("HardwareModel", backref="vendor", lazy="dynamic")
     hardware = db.relationship("Hardware", backref="vendor", lazy="dynamic")
+    software = db.relationship("Software", backref="vendor", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):
@@ -175,19 +176,37 @@ class Hardware(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
+    asset_tag = db.Column(db.String(64), unique=True)
     hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
-    #county = db.relationship("County", backref="county_hardware", lazy="dynamic")
-    #country = db.relationship("Country", backref="country_hardware", lazy="dynamic")
     notes = db.Column(db.String(255), unique=False)
-    #system = db.relationship("System", backref="hardware", lazy="dynamic")
-    #system_id = db.Column(db.Integer, db.ForeignKey("System.id"))
     order_by = "name"
     display_fields = ["name", "system", "vendor"]
     cascade = [("vendor", "hardware_model"), ("country", "county")]
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
+class Software(db.Model, GenericModel):
+    __tablename__ = "Software"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    software_version = db.relationship("SoftwareVersion", backref="software", lazy="dynamic")
+    system = db.relationship("System", backref="software", lazy="dynamic")
+    vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
+    display_fields = ["name", "vendor"]
+    order_by = "name"
+
+class SoftwareVersion(db.Model, GenericModel):
+    __tablename__ = "SoftwareVersion"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))
+    system = db.relationship("System", backref="software_version", lazy="dynamic")
+    display_fields = ["software", "name"]
+    order_by = "name"
+ 
 class System(db.Model, GenericModel):
     __tablename__ = "System"
     __doc__ = __tablename__
@@ -197,10 +216,11 @@ class System(db.Model, GenericModel):
     description = db.Column(db.String(255), unique=False)
     system_category = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
     l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))
-    #hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
-    #hardware = db.relationship("Hardware", backref="system", lazy="dynamic")
+    software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))
+    software_version_id = db.Column(db.Integer, db.ForeignKey("SoftwareVersion.id"))
     hardware = db.relationship("Hardware", secondary=systems_hardware, backref="system", lazy="dynamic")
-    display_fields = ["name", "management_ip", "l2domain"]
+    display_fields = ["name", "management_ip", "l2domain", "software", "software_version"]
+    cascade = [("software", "software_version")]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)

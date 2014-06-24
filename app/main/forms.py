@@ -5,7 +5,7 @@ from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
 from wtforms.widgets import Select, HiddenInput
 from flask.ext.pagedown.fields import PageDownField
-from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType
+from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion
 
 
 class Unique(object):
@@ -73,6 +73,8 @@ class SystemForm(Form):
     id = HiddenField()
     name = StringField('System Name', validators=[Required(), Unique(System, System.name), Length(min=2, max=64)])
     management_ip = StringField('Mangement IP', validators=[Required(), Unique(System, System.name), IPAddress()])
+    software = SelectField('Software', coerce=int)
+    software_version = SelectField('SoftwareVersion', coerce=int)
     system_category = SelectField('SystemCategory', coerce=int)
     l2domain = SelectField('Layer 2 Domain', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
@@ -81,6 +83,7 @@ class SystemForm(Form):
 class HardwareForm(Form):
     id = HiddenField()
     name = StringField('Serial Number', validators=[Required(), Unique(Hardware, Hardware.name), Length(min=2, max=64)])
+    asset_tag = StringField('Asset Tag', validators=[Unique(Hardware, Hardware.asset_tag)])
     system = SelectMultipleField('System', coerce=int)
     vendor = SelectField('Vendor', coerce=int, )
     hardware_model = SelectField('HardwareModel', coerce=int)
@@ -94,10 +97,21 @@ class VendorForm(Form):
     name = StringField('Vendor Name', validators=[Required(), Unique(Vendor, Vendor.name), Length(min=2, max=64)])
     submit = SubmitField('Submit')
 
+class SoftwareForm(Form):
+    id = HiddenField()
+    name = StringField('Software', validators=[Required(), Unique(Software, Software.name), Length(min=2, max=64)])
+    vendor = SelectField('Vendor', coerce=int)
+    submit = SubmitField('Submit')
+
+class SoftwareVersionForm(Form):
+    id = HiddenField()
+    name = StringField('Software version', validators=[Required(), Unique(SoftwareVersion, SoftwareVersion.name), Length(min=1, max=64)])
+    software = SelectField('Software', coerce=int)
+    submit = SubmitField('Submit')
+
 class HardwareModelForm(Form):
     id = HiddenField()
     name = StringField('Hardware Model Name', validators=[Required(), Unique(HardwareModel, HardwareModel.name), Length(min=2, max=64)])
-    #default_vendor = Vendor.query.filter_by(name="Cisco").first().id
     vendor = SelectField('Vendor', default=2, coerce=int)
     hardware_type = SelectField('HardwareType', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])

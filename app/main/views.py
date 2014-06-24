@@ -8,9 +8,9 @@ from flask.views import View
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
 from . import main
-from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm
+from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm
 from .. import db
-from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType
+from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion
 from .. import models
 from . import forms
 from wtforms.widgets import Select
@@ -19,7 +19,7 @@ from jinja2.exceptions import TemplateNotFound
 @main.route('/', methods=['GET'])
 def index():
     #models = [L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, County, HardwareType]
-    groups = [(L2Domain, System, Hardware), (Vendor, HardwareModel), (HardwareType, SystemCategory), (Country, County)]
+    groups = [(L2Domain, System, Hardware), (Vendor, HardwareModel), (HardwareType, SystemCategory), (Country, County), (Software, SoftwareVersion)]
     return render_template('index.html', groups=groups)
 
 @main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
@@ -231,8 +231,6 @@ class ListView(View):
 
             if not self.displayed:
                 self.displayed = list()
-                #print self.model.name.__class__.__name__ == "InstrumentedAttribute"
-                print self.model.__class__
                 for field in dir(model):
                     if getattr(model, field).__class__.__name__ == "InstrumentedAttribute":
                         if field != "id":

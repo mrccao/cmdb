@@ -15,7 +15,7 @@ if os.path.exists('.env'):
             os.environ[var[0]] = var[1]
 
 from app import create_app, db
-from app.models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, HardwareType
+from app.models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, HardwareType, Software, SoftwareVersion
 from flask.ext.script import Manager, Shell
 from flask.ext.migrate import Migrate, MigrateCommand
 
@@ -25,7 +25,7 @@ migrate = Migrate(app, db)
 
 
 def make_shell_context():
-    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country, HardwareType=HardwareType)
+    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country, HardwareType=HardwareType, Software=Software, SoftwareVersion=SoftwareVersion)
 manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 
@@ -90,6 +90,15 @@ def deploy():
     sc = SystemCategory.query.filter_by(name="Unknown")
     system.system_category = sc
     db.session.add(system)
+
+    software = Software()
+    software.name = "IOS"
+    software.vendor = Vendor.query.filter_by(name="Cisco").first()
+    db.session.add(software)
+    software = Software()
+    software.name = "NXOS"
+    software.vendor = Vendor.query.filter_by(name="Cisco").first()
+    db.session.add(software)
 
     with open("iso-3166-2.txt", "r") as f:
         country_codes = f.readlines()
