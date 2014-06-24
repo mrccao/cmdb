@@ -1,0 +1,10 @@
+{% extends "edit_model.html" %}
+
+{% block jquery_ready %}
+{{ super() }}
+        $("select#system").before('<input type="text" class="form-control" placeholder="System Filter (RegExp)" id="system_filter">');
+        $("select#system").filterByText($("input#system_filter"));
+       
+        input_group($("input#system_filter"), "filter");
+        input_group($("input#name"), "barcode");
+{% endblock %}

@@ -8,11 +8,13 @@
 </div>
 
 <div class="row">
-    {% for model in models %}
-        <div class="col-md-4">
-            <h3><a href="/view/{{ model.__name__.lower() }}">{{ model.__name__ }}</a></h3>
-            <p> {{ model.__doc__ }}</p>
-        </div>
+    {% for group in groups %}
+        {% for model in group %}
+            <div class="col-md-4">
+                <h3><a href="/view/{{ model.__name__.lower() }}">{{ model.__name__ }}</a></h3>
+                <p> {{ model.__doc__ }}</p>
+            </div>
+        {% endfor %}
     {% endfor %}
 </div>
 

@@ -3,15 +3,12 @@ import hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, Sequence
-from sqlalchemy.ext.declarative import declarative_base
 from markdown import markdown
 import bleach
 from flask import current_app, request, url_for
 from flask.ext.login import UserMixin, AnonymousUserMixin
 from app.exceptions import ValidationError
 from . import db, login_manager
-
-Base = declarative_base()
 
 class GenericModel(object):
     def get_columns(self, one_to_many=False, foreign_key=False):
@@ -27,7 +24,11 @@ class GenericModel(object):
                     if getattr(model_type, att).property.expression.foreign_keys:
                         columns.append(att)
         return columns
-        
+
+    def get_related_model(self):        
+        for column in self.__table__.foreign_keys:
+            return getattr(type(self), column).property.mapper.primary_base_mapper.entity
+
     def display_column(self, name):
         """ Display a human friendly row column name """
         maximum_single_results = 3

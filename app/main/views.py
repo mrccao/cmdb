@@ -14,11 +14,13 @@ from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCa
 from .. import models
 from . import forms
 from wtforms.widgets import Select
+from jinja2.exceptions import TemplateNotFound
 
 @main.route('/', methods=['GET'])
 def index():
-    models = [L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, County, HardwareType]
-    return render_template('index.html', models=models)
+    #models = [L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, County, HardwareType]
+    groups = [(L2Domain, System, Hardware), (Vendor, HardwareModel), (HardwareType, SystemCategory), (Country, County)]
+    return render_template('index.html', groups=groups)
 
 @main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
 def parent_child(parent, child, parent_id):
@@ -91,7 +93,11 @@ def generic_add(form, model, cascade=None):
         return redirect(redirect_url)
     if cascade == None:
         cascade = list()
-    return render_template('edit_model.html', form=form, Table=model_instance, cascade=cascade)
+    template_name = 'edit_%s.html' % model_type.__name__.lower()
+    try:
+        return render_template(template_name, form=form, Table=model_instance, cascade=cascade)
+    except TemplateNotFound:
+        return render_template('edit_model.html', form=form, Table=model_instance, cascade=cascade)
 
 def generic_edit(id, form, model, cascade=None):
     model_type = model
@@ -127,7 +133,11 @@ def generic_edit(id, form, model, cascade=None):
                     form_field.data = getattr(model_instance, field)
     if cascade is None:
         cascade = list()
-    return render_template('edit_model.html', form=form, Table=model_type, cascade=cascade)
+    template_name = 'edit_%s.html' % model_type.__name__.lower()
+    try:
+        return render_template(template_name, form=form, Table=model_instance, cascade=cascade)
+    except TemplateNotFound:
+        return render_template('edit_model.html', form=form, Table=model_type, cascade=cascade)
 
 def generic_delete(id, model):
     row = model.query.filter_by(id=id).first()

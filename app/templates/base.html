@@ -48,4 +48,16 @@
 {% block scripts %}
 {{ super() }}
 {{ moment.include_moment() }}
+<script>
+{% include 'filter_input.js' %}
+{% include 'input_group.js' %}
+
+    $(document).ready(function() {
+        input_group($("input#notes"), "info-sign");
+        input_group($("input#description"), "info-sign");
+        input_group($("select#hardware_model"), "hdd");
+        {% block jquery_ready %}
+        {% endblock %}
+    });
+</script>
 {% endblock %}
