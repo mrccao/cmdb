@@ -15,7 +15,7 @@ if os.path.exists('.env'):
             os.environ[var[0]] = var[1]
 
 from app import create_app, db
-from app.models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, HardwareType, Software, SoftwareVersion
+from app.models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, HardwareType, Software, SoftwareVersion, Location, City, County, Street
 from flask.ext.script import Manager, Shell
 from flask.ext.migrate import Migrate, MigrateCommand
 
@@ -25,7 +25,7 @@ migrate = Migrate(app, db)
 
 
 def make_shell_context():
-    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country, HardwareType=HardwareType, Software=Software, SoftwareVersion=SoftwareVersion)
+    return dict(app=app, db=db, L2Domain=L2Domain, System=System, Vendor=Vendor, HardwareModel=HardwareModel, Hardware=Hardware, Country=Country, County=County, HardwareType=HardwareType, Software=Software, SoftwareVersion=SoftwareVersion, City=City, Street=Street, Location=Location)
 manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 

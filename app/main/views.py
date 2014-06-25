@@ -1,16 +1,17 @@
 import sys
+import json
 import inspect
 
 import MySQLdb
 
-from flask import render_template, redirect, url_for, abort, flash, request,current_app, make_response
+from flask import render_template, redirect, url_for, abort, flash, request,current_app, make_response, jsonify
 from flask.views import View
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
 from . import main
-from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm
+from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm
 from .. import db
-from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion
+from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion, City, Street, Location
 from .. import models
 from . import forms
 from wtforms.widgets import Select
@@ -18,8 +19,7 @@ from jinja2.exceptions import TemplateNotFound
 
 @main.route('/', methods=['GET'])
 def index():
-    #models = [L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, County, HardwareType]
-    groups = [(L2Domain, System, Hardware), (Vendor, HardwareModel), (HardwareType, SystemCategory), (Country, County), (Software, SoftwareVersion)]
+    groups = [(L2Domain, System, Hardware), (Vendor, HardwareModel), (HardwareType, SystemCategory), (Country, County, City, Street, Location), (Software, SoftwareVersion)]
     return render_template('index.html', groups=groups)
 
 @main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
@@ -37,8 +37,11 @@ def parent_child(parent, child, parent_id):
         if parent_cls and child_cls:
             break
     options = ""
+    #options_list = []
     for row in child_cls.query.filter(getattr(child_cls, parent).has(id=parent_id)):
         options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)
+        #options_list.append({"id" : row.id, "value" : row.name})
+    #return jsonify(options_list)
     return options
 
 

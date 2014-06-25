@@ -1,6 +1,6 @@
 {% extends "bootstrap/base.html" %}
 
-{% block title %}Automation{% endblock %}
+{% block title %}nCMDB{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -19,7 +19,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">Automation</a>
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Home</a>
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
@@ -56,6 +56,8 @@
         input_group($("input#notes"), "info-sign");
         input_group($("input#description"), "info-sign");
         input_group($("select#hardware_model"), "hdd");
+        input_group($("input#asset_tag"), "tag");
+        input_group($("select#software"), "floppy-disk");
         {% block jquery_ready %}
         {% endblock %}
     });

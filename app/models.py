@@ -63,14 +63,19 @@ class GenericModel(object):
     def get_foreign_keys(self):
         return self.get_columns(foreign_key=True)
 
-class Address(db.Model, GenericModel):
-    __tablename__ = "Address"
+class Location(db.Model, GenericModel):
+    __tablename__ = "Location"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     zipcode = db.Column(db.String(64), unique=True)
+    country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
+    county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
+    city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
+    street_id = db.Column(db.Integer, db.ForeignKey("Street.id"))
     display_fields = ["name"]
     order_by = "name"
+    cascade = [("country", "county", "city", "street")]
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
@@ -85,12 +90,41 @@ class HardwareType(db.Model, GenericModel):
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
+class Street(db.Model, GenericModel):
+    __tablename__ = "Street"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
+    location = db.relationship("Location", backref="street", lazy="dynamic")
+    display_fields = ["name"]
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+
+class City(db.Model, GenericModel):
+    __tablename__ = "City"
+    __doc__ = __tablename__
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
+    street = db.relationship("Street", backref="city", lazy="dynamic")
+    location = db.relationship("Location", backref="city", lazy="dynamic")
+    display_fields = ["name"]
+    order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+
 class County(db.Model, GenericModel):
     __tablename__ = "County"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
+    city = db.relationship("City", backref="county", lazy="dynamic")
+    location = db.relationship("Location", backref="county", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):
@@ -103,7 +137,7 @@ class Country(db.Model, GenericModel):
     name = db.Column(db.String(64), unique=True)
     code = db.Column(db.String(64), unique=True)
     county = db.relationship("County", backref="country", lazy="dynamic")
-    #hardware_id = db.Column(db.Integer, db.ForeignKey("Hardware.id"))
+    location = db.relationship("Location", backref="country", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     def __repr__(self):

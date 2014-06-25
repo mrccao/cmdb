@@ -15,69 +15,77 @@
 {{ super() }}
 {{ pagedown.include_pagedown() }}
 <script>
-    {% for parent, child in cascade %}
-        var parent_name = "{{ parent }}";
-        var child_name = "{{ child }}";
-        var parent_selector = "select#" + parent_name;
-        var child_selector = "select#" + child_name;
-        $(parent_selector).attr("child", child_name);
-        $(child_selector).attr("parent", parent_name);
-        $(child_selector).find("option").remove();
+    var parent_name;
+    {% for group in cascade %}
+        {% for select in group %}
+        if ( parent_name !== undefined ){
+            var child_name = "{{ select }}";
 
-        $(parent_selector).change( function() {
-            var parent_name = $(this).attr("id");
-            var current = "select#" + parent_name;
+            var parent_selector = "select#" + parent_name;
+            var child_selector = "select#" + child_name;
 
-            // Disable & hide all children and set to loading
-            while (true) {
-                var parent_name = $(current).attr("id");
-                var child_name = $(current).attr("child");
-                current = "select#" + child_name;
-                $(current).prop("disabled", true);
-                $(current).hide();
-                $(current).before("<div id=" + parent_name + "_loading ><img src='/static/img/loading.gif' /></div>");
-                $(current).find("option").remove();
+            $(parent_selector).attr("child", child_name);
+            $(child_selector).attr("parent", parent_name);
+            $(child_selector).find("option").remove();
 
-                var child_attr = $(current).attr("child");
-                if ( typeof child_attr == "undefined" || child_attr == false) {
-                    break;
+            $(parent_selector).change( function() {
+                var parent_name = $(this).attr("id");
+                var current = "select#" + parent_name;
+
+                // Disable & hide all children and set to loading
+                while (true) {
+                    var parent_name = $(current).attr("id");
+                    var child_name = $(current).attr("child");
+                    current = "select#" + child_name;
+                    $(current).prop("disabled", true);
+                    $(current).hide();
+                    $(current).before("<div id=" + parent_name + "_loading ><img src='/static/img/loading.gif' /></div>");
+                    $(current).find("option").remove();
+
+                    var child_attr = $(current).attr("child");
+                    if ( typeof child_attr == "undefined" || child_attr == false) {
+                        break;
+                    }
                 }
-            }
-            var current = "select#" + parent_name;
+                current = "select#" + $(this).attr("id");
+    
+                // Reload every dependent select child by child
+                while (true) {
+                    var parent_name = $(current).attr("id");
+                    var child_name = $(current).attr("child");
 
-            // Reload every dependent select child by child
-            while (true) {
-                var parent_name = $(current).attr("id");
-                var child_name = $(current).attr("child");
-                current = "select#" + child_name;
-                var parent_id = $("select#" + parent_name).find(":selected").val();
-                
-                var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
-                var new_children;
-                // Load cached queries or make an Ajax call
-                if ( $(current).data(get_url) !== undefined ) {
-                    new_children = $(current).data(get_url);
-                } else {
-                    new_children = $.ajax({
-                       type: "GET",
-                       url: get_url,
-                       async: false
-                    }).responseText;
-                    $(current).data(get_url, new_children);
+                    current = "select#" + child_name;
+                    var parent_id = $("select#" + parent_name).find(":selected").val();
+                    
+                    var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
+                    var new_children;
+                    // Load cached queries or make an Ajax call
+                    if ( $(current).data(get_url) !== undefined ) {
+                        new_children = $(current).data(get_url);
+                    } else {
+                        new_children = $.ajax({
+                        type: "GET",
+                        url: get_url,
+                        async: false
+                        }).responseText;
+                        $(current).data(get_url, new_children);
+                    }
+                    $(current).append(new_children);
+                    $("div#" + parent_name + "_loading").remove();
+                    $(current).prop("disabled", false);
+                    $(current).show();
+                    $(current).children().removeAttr("selected");
+                    $(current + " option:visible").first().attr("selected", "selected");
+                    var child_attr = $(current).attr("child");
+                    if ( typeof child_attr == "undefined" || child_attr == false) {
+                        break;
+                    }
                 }
-                $(current).append(new_children);
-                $("div#" + parent_name + "_loading").remove();
-                $(current).prop("disabled", false);
-                $(current).show();
-                $(current).children().removeAttr("selected");
-                $(current + " option:visible").first().attr("selected", "selected");
-                var child_attr = $(current).attr("child");
-                if ( typeof child_attr == "undefined" || child_attr == false) {
-                    break;
-                }
-            }
-        });
-        $(parent_selector).trigger("change")
+            });
+            $(parent_selector).trigger("change")
+        }
+        var parent_name = "{{ select }}";
+    {% endfor %}
     {% endfor %}
 </script>
 {% endblock %}

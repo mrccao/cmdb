@@ -5,7 +5,7 @@ from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
 from wtforms.widgets import Select, HiddenInput
 from flask.ext.pagedown.fields import PageDownField
-from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion
+from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion, City, Street, Location
 
 
 class Unique(object):
@@ -40,11 +40,33 @@ class HardwareTypeForm(Form):
     name = StringField('Hardware Type', validators=[Required(), Unique(HardwareType, HardwareType.name)])
     submit = SubmitField('Submit')
 
+class LocationForm(Form):
+    id = HiddenField()
+    name = StringField('Street', validators=[Required()])
+    country = SelectField('Country', coerce=int)
+    county = SelectField('County', coerce=int)
+    city = SelectField('City', coerce=int)
+    street = SelectField('Street', coerce=int)
+    submit = SubmitField('Submit')
+
+
+class StreetForm(Form):
+    id = HiddenField()
+    name = StringField('Street', validators=[Required()])
+    city = SelectField('City', coerce=int)
+    submit = SubmitField('Submit')
+
+
+class CityForm(Form):
+    id = HiddenField()
+    name = StringField('City', validators=[Required()])
+    county = SelectField('County', coerce=int)
+    submit = SubmitField('Submit')
+
 
 class CountyForm(Form):
     id = HiddenField()
-    name = StringField('County / Province / State', validators=[Required(), Unique(County, County.name)])
-    #default_country = Country.query.filter_by(code="DK").first().id
+    name = StringField('County / Province / State', validators=[Required()])
     country = SelectField('Country', default=59,coerce=int)
     submit = SubmitField('Submit')
 
