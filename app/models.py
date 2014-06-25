@@ -68,12 +68,14 @@ class Location(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    zipcode = db.Column(db.String(64), unique=True)
+    zip_code = db.Column(db.String(64))
+    street_number = db.Column(db.String(32))
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
     county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
     city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
     street_id = db.Column(db.Integer, db.ForeignKey("Street.id"))
-    display_fields = ["name"]
+    system = db.relationship("System", backref="location", lazy="dynamic")
+    display_fields = ["name", "street", "city", "country"]
     order_by = "name"
     cascade = [("country", "county", "city", "street")]
     def __repr__(self):
@@ -84,6 +86,7 @@ class HardwareType(db.Model, GenericModel):
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
+    hardware = db.relationship("Hardware", backref="hardware_type", lazy="dynamic")
     hardware_model = db.relationship("HardwareModel", backref="hardware_type", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
@@ -97,7 +100,7 @@ class Street(db.Model, GenericModel):
     name = db.Column(db.String(64), unique=True)
     city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
     location = db.relationship("Location", backref="street", lazy="dynamic")
-    display_fields = ["name"]
+    display_fields = ["name", "city"]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
@@ -111,7 +114,7 @@ class City(db.Model, GenericModel):
     county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
     street = db.relationship("Street", backref="city", lazy="dynamic")
     location = db.relationship("Location", backref="city", lazy="dynamic")
-    display_fields = ["name"]
+    display_fields = ["name", "county"]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
@@ -125,7 +128,7 @@ class County(db.Model, GenericModel):
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
     city = db.relationship("City", backref="county", lazy="dynamic")
     location = db.relationship("Location", backref="county", lazy="dynamic")
-    display_fields = ["name"]
+    display_fields = ["name", "country"]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
@@ -211,9 +214,11 @@ class Hardware(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     asset_tag = db.Column(db.String(64), unique=True)
-    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
+    coordinance = db.Column(db.String(64), unique=True)
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
-    notes = db.Column(db.String(255), unique=False)
+    hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))
+    hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
+    notes = db.Column(db.String(255))
     order_by = "name"
     display_fields = ["name", "system", "vendor"]
     cascade = [("vendor", "hardware_model"), ("country", "county")]
@@ -251,6 +256,7 @@ class System(db.Model, GenericModel):
     system_category = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
     l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))
     software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))
+    location_id = db.Column(db.Integer, db.ForeignKey("Location.id"))
     software_version_id = db.Column(db.Integer, db.ForeignKey("SoftwareVersion.id"))
     hardware = db.relationship("Hardware", secondary=systems_hardware, backref="system", lazy="dynamic")
     display_fields = ["name", "management_ip", "l2domain", "software", "software_version"]

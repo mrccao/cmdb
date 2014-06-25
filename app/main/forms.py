@@ -42,7 +42,9 @@ class HardwareTypeForm(Form):
 
 class LocationForm(Form):
     id = HiddenField()
-    name = StringField('Street', validators=[Required()])
+    name = StringField('Location Name', validators=[Required()])
+    zip_code = StringField('Zip Code')
+    street_number = StringField('Street Number')
     country = SelectField('Country', coerce=int)
     county = SelectField('County', coerce=int)
     city = SelectField('City', coerce=int)
@@ -99,6 +101,7 @@ class SystemForm(Form):
     software_version = SelectField('SoftwareVersion', coerce=int)
     system_category = SelectField('SystemCategory', coerce=int)
     l2domain = SelectField('Layer 2 Domain', coerce=int)
+    location = SelectField('Location', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
@@ -108,9 +111,9 @@ class HardwareForm(Form):
     asset_tag = StringField('Asset Tag', validators=[Unique(Hardware, Hardware.asset_tag)])
     system = SelectMultipleField('System', coerce=int)
     vendor = SelectField('Vendor', coerce=int, )
+    hardware_type = SelectField('HardwareType', coerce=int)
     hardware_model = SelectField('HardwareModel', coerce=int)
-    #country = SelectField('Country', default=1, coerce=int)
-    #county = SelectField('County', coerce=int)
+    coordinance = StringField('Location Coordinance', validators=[Required()])
     notes = StringField('Notes', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 

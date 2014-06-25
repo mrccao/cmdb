@@ -37,11 +37,8 @@ def parent_child(parent, child, parent_id):
         if parent_cls and child_cls:
             break
     options = ""
-    #options_list = []
     for row in child_cls.query.filter(getattr(child_cls, parent).has(id=parent_id)):
         options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)
-        #options_list.append({"id" : row.id, "value" : row.name})
-    #return jsonify(options_list)
     return options
 
 
