@@ -265,3 +265,10 @@ class System(db.Model, GenericModel):
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
+class User(UserMixin, db.Model):
+    __tablename__ = "User"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+
+    def verify_password(self, password):
+        return True

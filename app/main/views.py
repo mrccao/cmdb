@@ -2,8 +2,6 @@ import sys
 import json
 import inspect
 
-import MySQLdb
-
 from flask import render_template, redirect, url_for, abort, flash, request,current_app, make_response, jsonify
 from flask.views import View
 from flask.ext.login import login_required, current_user
@@ -18,11 +16,38 @@ from wtforms.widgets import Select
 from jinja2.exceptions import TemplateNotFound
 
 @main.route('/', methods=['GET'])
+@login_required
 def index():
-    groups = [(L2Domain, System, Hardware), (Vendor, HardwareModel), (HardwareType, SystemCategory), (Country, County, City, Street, Location), (Software, SoftwareVersion)]
+    groups = [(Vendor, L2Domain)]
     return render_template('index.html', groups=groups)
 
+@main.route('/system', methods=['GET'])
+@login_required
+def system():
+    groups = [(System, SystemCategory)]
+    return render_template('index.html', groups=groups)
+
+@main.route('/hardware', methods=['GET'])
+@login_required
+def hardware():
+    groups = [(Hardware, HardwareModel, HardwareType)]
+    return render_template('index.html', groups=groups)
+
+@main.route('/software', methods=['GET'])
+@login_required
+def software():
+    groups = [(Software, SoftwareVersion)]
+    return render_template('index.html', groups=groups)
+
+@main.route('/locations', methods=['GET'])
+@login_required
+def locations():
+    groups = [(Country, County, City, Street, Location)]
+    return render_template('index.html', groups=groups)
+
+
 @main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
+@login_required
 def parent_child(parent, child, parent_id):
     parent = parent.replace("_", "")
     child = child.replace("_", "")
@@ -176,6 +201,7 @@ class AddView(View):
         self.model = model
         self.form = form
 
+    @login_required
     def dispatch_request(self):
         cascade = []
         if hasattr(self.model, "cascade"):
@@ -189,6 +215,7 @@ class EditView(View):
         self.model = model
         self.form = form
 
+    @login_required
     def dispatch_request(self, id):
         cascade = []
         if hasattr(self.model, "cascade"):
@@ -201,6 +228,7 @@ class DeleteView(View):
     def __init__(self, model):
         self.model = model
 
+    @login_required
     def dispatch_request(self, id):
         row = self.model.query.filter_by(id=id).first()
         name = self.model.__name__.lower()
@@ -218,6 +246,7 @@ class ListView(View):
         if not self.table_view.order.asc:
             self.table_view.records.reverse()
 
+    @login_required
     def dispatch_request(self):
         return generic_view(self.model(), self.table_view.displayed)
 

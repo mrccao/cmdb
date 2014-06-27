@@ -7,16 +7,22 @@
     <h1>nCMDB</h1>
 </div>
 
-<div class="row">
+<table class="table table-striped">
+    <thead>
+        <th>Item</th>
+        <th>Description</th>
+    </thead>
+    <tbody>
     {% for group in groups %}
         {% for model in group %}
-            <div class="col-md-4">
-                <h3><a href="/view/{{ model.__name__.lower() }}">{{ model.__name__ }}</a></h3>
-                <p> {{ model.__doc__ }}</p>
-            </div>
+            <tr>
+                <td><a href="/view/{{ model.__name__.lower() }}">{{ model.__name__ }}</a></td>
+                <td> {{ model.__doc__ }}</td>
+            </tr>
         {% endfor %}
     {% endfor %}
-</div>
+    </tbody>
+</table>
 
 {% endblock %}
 
