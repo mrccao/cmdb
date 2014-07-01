@@ -23,6 +23,8 @@
 
             var parent_selector = "select#" + parent_name;
             var child_selector = "select#" + child_name;
+            // Store the correct default starting value
+            $(child_selector).data("selected", $(child_selector).val());
 
             $(parent_selector).attr("child", child_name);
             $(child_selector).attr("parent", parent_name);
@@ -31,12 +33,20 @@
             $(parent_selector).change( function() {
                 var parent_name = $(this).attr("id");
                 var current = "select#" + parent_name;
-
                 // Disable & hide all children and set to loading
                 while (true) {
                     var parent_name = $(current).attr("id");
                     var child_name = $(current).attr("child");
+                    var child_selector = "select#" + child_name;
                     current = "select#" + child_name;
+
+                    // Save the default starting values before the cascade logic
+                    var stored_default = $(child_selector).data("selected");
+                    if (stored_default == undefined || stored_default == null) {
+                            var child_value = $(child_selector).val();
+                            $(child_selector).data("selected", child_value);
+                    }
+
                     $(current).prop("disabled", true);
                     $(current).hide();
                     $(current).before("<div id=" + parent_name + "_loading ><img src='/static/img/loading.gif' /></div>");
@@ -77,6 +87,13 @@
                     $(current).children().removeAttr("selected");
                     $(current + " option:visible").first().attr("selected", "selected");
                     var child_attr = $(current).attr("child");
+
+                    // Set the select to the starting value
+                    var selected_item = $(current).data("selected");
+                    var selected_item_exists = 0 != $(current + ' option[value='+selected_item+']').length;
+                    if ( selected_item_exists ) 
+                        $(current).val(selected_item);
+
                     if ( typeof child_attr == "undefined" || child_attr == false) {
                         break;
                     }
