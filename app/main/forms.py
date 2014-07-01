@@ -5,7 +5,7 @@ from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
 from wtforms.widgets import Select, HiddenInput
 from flask.ext.pagedown.fields import PageDownField
-from ..models import L2Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion, City, Street, Location
+from ..models import L2Domain, L3Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion, City, Street, Location
 
 
 class Unique(object):
@@ -86,6 +86,13 @@ class L2DomainForm(Form):
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
+class L3DomainForm(Form):
+    id = HiddenField()
+    name = StringField('Name', validators=[Required(), Unique(L3Domain, L3Domain.name)])
+    description = StringField('Description', validators=[Length(max=255)])
+    submit = SubmitField('Submit')
+
+
 class SystemCategoryForm(Form):
     id = HiddenField()
     name = StringField('Name', validators=[Required(), Unique(SystemCategory, SystemCategory.name)])
@@ -96,7 +103,8 @@ class SystemCategoryForm(Form):
 class SystemForm(Form):
     id = HiddenField()
     name = StringField('System Name', validators=[Required(), Unique(System, System.name), Length(min=2, max=64)])
-    management_ip = StringField('Mangement IP', validators=[Required(), Unique(System, System.name), IPAddress()])
+    l3domain = SelectField('Management IP Layer 3 Domain', coerce=int, validators=[Required()])
+    management_ip = StringField('Mangement IP', validators=[Required(), IPAddress()])
     software = SelectField('Software', coerce=int)
     software_version = SelectField('SoftwareVersion', coerce=int)
     system_category = SelectField('SystemCategory', coerce=int)

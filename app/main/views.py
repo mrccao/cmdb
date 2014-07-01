@@ -7,9 +7,9 @@ from flask.views import View
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
 from . import main
-from .forms import L2DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm
+from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm
 from .. import db
-from ..models import L2Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion, City, Street, Location
+from ..models import L2Domain, L3Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion, City, Street, Location
 from .. import models
 from . import forms
 from wtforms.widgets import Select
@@ -18,7 +18,7 @@ from jinja2.exceptions import TemplateNotFound
 @main.route('/', methods=['GET'])
 @login_required
 def index():
-    groups = [(Vendor, L2Domain)]
+    groups = [(Vendor, L2Domain, L3Domain)]
     return render_template('index.html', groups=groups)
 
 @main.route('/system', methods=['GET'])
