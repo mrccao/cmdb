@@ -19,15 +19,15 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <span class="navbar-brand"><h3>nCMDB</h3></span>
+            <div class="navbar-brand">nCMDB</div>
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li><a href="{{ url_for('main.index') }}"><h4>Home</h4></a></li>
-                <li><a href="{{ url_for('main.system') }}"><h4>System</h4></a></li>
-                <li><a href="{{ url_for('main.software') }}"><h4>Software</h4></a></li>
-                <li><a href="{{ url_for('main.hardware') }}"><h4>Hardware</h4></a></li>
-                <li><a href="{{ url_for('main.locations') }}"><h4>Locations</h4></a></li>
+                <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                <li><a href="{{ url_for('main.system') }}">System</a></li>
+                <li><a href="{{ url_for('main.software') }}">Software</a></li>
+                <li><a href="{{ url_for('main.hardware') }}">Hardware</a></li>
+                <li><a href="{{ url_for('main.locations') }}">Locations</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated() %}
@@ -37,10 +37,14 @@
                 {% endif %}
            </ul>
       <form class="navbar-form navbar-right" role="search">
-        <div class="form-group">
-          <input type="text" class="form-control" placeholder="Search">
+        <div class="input-group">
+            <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search">
+            <!-- <button type="submit" class="btn btn-default">Submit</button> -->
+            <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
+            </div>
+            
         </div>
-        <button type="submit" class="btn btn-default">Submit</button>
       </form>
         </div>
 
