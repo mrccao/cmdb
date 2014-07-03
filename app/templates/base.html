@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block navbar %}
-<div class="navbar-default navbar navbar-inverse" role="navigation">
+<div class="navbar transparent navbar-default navbar-fixed-top navbar-inverse" role="navigation">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -30,11 +30,26 @@
                 <li><a href="{{ url_for('main.locations') }}">Locations</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                {% if current_user.is_authenticated() %}
-                    <li><a href="{{ url_for('auth.logout') }}">{{ current_user.name }}-Sign Out</a></li>
-                {% else %}
-                    <li><a href="{{ url_for('auth.login') }}">Sign In</a></li>
-                {% endif %}
+                <li>
+                    <div class="btn-group">
+                    {% if current_user.is_authenticated() %}
+                        <button type="button" class="btn btn-default">
+                            <span class="glyphicon glyphicon-user"></span> {{ current_user.name }}
+                        </button>
+                        <button type="button" class="btn btn-default">
+                            <a href="{{ url_for('auth.logout') }}">
+                                Sign Out
+                            </a>
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-default">
+                            <span class="glyphicon glyphicon-user"></span> ?
+                        </button>
+                        <button type="button" class="btn btn-default">
+                            <a href="{{ url_for('auth.login') }}">Sign In</a>
+                        </button>
+                    {% endif %}
+                </li>
            </ul>
       <form class="navbar-form navbar-right" role="search">
         <div class="input-group">
@@ -51,6 +66,7 @@
 
     </div>
 </div>
+<p></p>
 {% endblock %}
 
 {% block content %}

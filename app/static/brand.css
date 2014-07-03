@@ -1,6 +1,11 @@
+.navbar.transparent.navbar-inverse {
+   background: rgba(200, 0, 0, 0.8);
+}
+
 .navbar-default {
     background-color: #880000;
     border-color: #bb0000;
+    border-radius: 0px;
 }
 .navbar-default .navbar-brand {
     color: #ffffff;
