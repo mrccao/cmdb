@@ -1,8 +1,12 @@
+.navbar-right>li {
+      padding-left:30px;
+}
 .btn-dead:hover, .btn-dead:active {
     color: #333;
     background-color: #fff;
     border-color: #ccc;
 }
+
 .navbar.transparent.navbar-inverse {
    background: rgba(200, 0, 0, 0.8);
 }

@@ -31,19 +31,23 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
+                <span>
+                </span>
+                </li>
+                <li>
                     <div class="btn-group">
                     {% if current_user.is_authenticated() %}
-                        <div type="button" class="btn btn-default btn-dead" role="button">
+                        <div type="button" class="btn btn-default navbar-btn btn-dead" role="button">
                             <span class="glyphicon glyphicon-user"></span> {{ current_user.name }}
                         </div>
-                        <a type="button" class="btn btn-default" role="button" href="{{ url_for('auth.logout') }}">
+                        <a type="button" class="btn btn-default navbar-btn" role="button" href="{{ url_for('auth.logout') }}">
                                 Sign Out
                         </a>
                     {% else %}
-                        <div type="button" class="btn btn-default btn-dead" role="button">
+                        <div type="button" class="btn btn-default btn-dead navbar-btn" role="button">
                             <span class="glyphicon glyphicon-user"></span> Nobody 
                         </div>
-                        <a type="button" class="btn btn-default" href="{{ url_for('auth.login') }}">
+                        <a type="button" class="btn btn-default navbar-btn" href="{{ url_for('auth.login') }}">
                             Sign In
                         </a>
                     {% endif %}
