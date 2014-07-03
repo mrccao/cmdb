@@ -5,8 +5,8 @@
 {% block head %}
 {{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='brand.css') }}">
-<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}?v=2" type="image/x-icon">
+<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}?v=2" type="image/x-icon">
 {% endblock %}
 
 {% block navbar %}
@@ -33,21 +33,19 @@
                 <li>
                     <div class="btn-group">
                     {% if current_user.is_authenticated() %}
-                        <button type="button" class="btn btn-default">
+                        <div type="button" class="btn btn-default btn-dead" role="button">
                             <span class="glyphicon glyphicon-user"></span> {{ current_user.name }}
-                        </button>
-                        <button type="button" class="btn btn-default">
-                            <a href="{{ url_for('auth.logout') }}">
+                        </div>
+                        <a type="button" class="btn btn-default" role="button" href="{{ url_for('auth.logout') }}">
                                 Sign Out
-                            </a>
-                        </button>
+                        </a>
                     {% else %}
-                        <button type="button" class="btn btn-default">
-                            <span class="glyphicon glyphicon-user"></span> ?
-                        </button>
-                        <button type="button" class="btn btn-default">
-                            <a href="{{ url_for('auth.login') }}">Sign In</a>
-                        </button>
+                        <div type="button" class="btn btn-default btn-dead" role="button">
+                            <span class="glyphicon glyphicon-user"></span> Nobody 
+                        </div>
+                        <a type="button" class="btn btn-default" href="{{ url_for('auth.login') }}">
+                            Sign In
+                        </a>
                     {% endif %}
                 </li>
            </ul>
