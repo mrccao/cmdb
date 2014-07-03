@@ -105,6 +105,7 @@ class SystemForm(Form):
     name = StringField('System Name', validators=[Required(), Unique(System, System.name), Length(min=2, max=64)])
     l3domain = SelectField('Management IP Layer 3 Domain', coerce=int, validators=[Required()])
     management_ip = StringField('Mangement IP', validators=[Required(), IPAddress()])
+    vendor = SelectField('Vendor', coerce=int)
     software = SelectField('Software', coerce=int)
     software_version = SelectField('SoftwareVersion', coerce=int)
     system_category = SelectField('SystemCategory', coerce=int)

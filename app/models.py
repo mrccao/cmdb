@@ -1,5 +1,5 @@
-from datetime import datetime
 import hashlib
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, Sequence
@@ -9,6 +9,7 @@ from flask import current_app, request, url_for
 from flask.ext.login import UserMixin, AnonymousUserMixin
 from app.exceptions import ValidationError
 from . import db, login_manager
+import flask.ext.whooshalchemy
 
 class GenericModel(object):
     def get_columns(self, one_to_many=False, foreign_key=False):
@@ -66,6 +67,7 @@ class GenericModel(object):
 class Location(db.Model, GenericModel):
     __tablename__ = "Location"
     __doc__ = __tablename__
+    __searchable__ = ['name', 'zip_code', 'street_number']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     zip_code = db.Column(db.String(64))
@@ -160,6 +162,20 @@ class L2Domain(db.Model, GenericModel):
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 
+class L3Domain(db.Model, GenericModel):
+    __tablename__ = "L3Domain"
+    __doc__ = "Layer 3 Domain"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    description = db.Column(db.String(255), unique=False)
+    system = db.relationship("System", backref="l3domain", lazy="dynamic")
+    display_fields = ["name"]
+    order_by = "name"
+    
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
+
 class SystemCategory(db.Model, GenericModel):
     __tablename__ = "SystemCategory"
     __doc__ = "System Category"
@@ -182,6 +198,7 @@ class Vendor(db.Model, GenericModel):
     name = db.Column(db.String(64), unique=True)
     hardware_model = db.relationship("HardwareModel", backref="vendor", lazy="dynamic")
     hardware = db.relationship("Hardware", backref="vendor", lazy="dynamic")
+    system = db.relationship("System", backref="vendor", lazy="dynamic")
     software = db.relationship("Software", backref="vendor", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
@@ -191,6 +208,7 @@ class Vendor(db.Model, GenericModel):
 class HardwareModel(db.Model, GenericModel):
     __tablename__ = "HardwareModel"
     __doc__ = "Hardware Model"
+    __searchable__ = ['name']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(255))
@@ -211,6 +229,7 @@ systems_hardware = db.Table('systems_hardware',
 class Hardware(db.Model, GenericModel):
     __tablename__ = "Hardware"
     __doc__ = __tablename__
+    __searchable__ = ['name', 'asset_tag', 'coordiance']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     asset_tag = db.Column(db.String(64), unique=True)
@@ -239,6 +258,7 @@ class Software(db.Model, GenericModel):
 class SoftwareVersion(db.Model, GenericModel):
     __tablename__ = "SoftwareVersion"
     __doc__ = __tablename__
+    __searchable__ = ['name']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))
@@ -248,19 +268,22 @@ class SoftwareVersion(db.Model, GenericModel):
  
 class System(db.Model, GenericModel):
     __tablename__ = "System"
+    __searchable__ = ['name', 'management_ip']
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    management_ip = db.Column(db.String(64), unique=True)
+    l3domain_id = db.Column(db.Integer, db.ForeignKey("L3Domain.id"))
+    management_ip = db.Column(db.String(64))
     description = db.Column(db.String(255), unique=False)
     system_category = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
     l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))
+    vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))
     location_id = db.Column(db.Integer, db.ForeignKey("Location.id"))
     software_version_id = db.Column(db.Integer, db.ForeignKey("SoftwareVersion.id"))
     hardware = db.relationship("Hardware", secondary=systems_hardware, backref="system", lazy="dynamic")
     display_fields = ["name", "management_ip", "l2domain", "software", "software_version"]
-    cascade = [("software", "software_version")]
+    cascade = [("vendor", "software", "software_version")]
     order_by = "name"
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
