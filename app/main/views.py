@@ -74,8 +74,6 @@ def populate_one_to_many_choices(form, model):
     for column in model_instance.get_one_to_many_columns():
         if not hasattr(form, column):
             continue
-        else:
-            print column
         related_model = getattr(model_type, column).property.mapper.primary_base_mapper.entity
         choices = [(r_column.id, getattr(r_column, related_model.order_by)) for r_column in related_model.query.order_by(related_model.order_by)]
         if choices is None:
