@@ -16,7 +16,7 @@
     {% for group in groups %}
         {% for model in group %}
             <tr>
-                <td><a href="/view/{{ model.__name__.lower() }}">{{ model.__name__ }}</a></td>
+                <td><a href="/view/{{ model.__name__.lower() }}">{{ model().get_model_friendly_name() }}</a></td>
                 <td> {{ model.__doc__ }}</td>
             </tr>
         {% endfor %}

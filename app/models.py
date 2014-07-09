@@ -1,4 +1,5 @@
 import hashlib
+import re
 
 import app
 from datetime import datetime
@@ -27,6 +28,9 @@ class GenericModel(object):
                     if getattr(model_type, att).property.expression.foreign_keys:
                         columns.append(att)
         return columns
+
+    def get_model_friendly_name(self):
+        return re.sub("([a-z])([A-Z])","\g<1> \g<2>",self.__class__.__name__)
 
     def get_related_model(self):        
         for column in self.__table__.foreign_keys:

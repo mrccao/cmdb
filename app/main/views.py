@@ -142,9 +142,9 @@ def generic_add(form, model, cascade=None):
         cascade = list()
     template_name = 'edit_%s.html' % model_type.__name__.lower()
     try:
-        return render_template(template_name, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+        return render_template(template_name, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
     except TemplateNotFound:
-        return render_template('edit_model.html', form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+        return render_template('edit_model.html', model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
 
 def generic_edit(id, form, model, cascade=None):
     search_form = SearchForm()
@@ -183,9 +183,9 @@ def generic_edit(id, form, model, cascade=None):
         cascade = list()
     template_name = 'edit_%s.html' % model_type.__name__.lower()
     try:
-        return render_template(template_name, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+        return render_template(template_name, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
     except TemplateNotFound:
-        return render_template('edit_model.html', form=form, Table=model_type, cascade=cascade, search_form=search_form)
+        return render_template('edit_model.html', model=model_instance, form=form, Table=model_type, cascade=cascade, search_form=search_form)
 
 def generic_delete(id, model):
     row = model.query.filter_by(id=id).first()
@@ -195,8 +195,11 @@ def generic_delete(id, model):
 
 def generic_view(model, displayed_fields=None):
     search_form = SearchForm()
+    model_type = type(model)
+    model_instance = model
     class table_view:
         name = type(model).__name__
+        friendly_name = model.get_model_friendly_name()
         displayed = displayed_fields
         if not displayed_fields:
             displayed = list()
@@ -215,7 +218,7 @@ def generic_view(model, displayed_fields=None):
     table_view.records = model.query.order_by(table_view.order.by).all()
     if not table_view.order.asc:
         table_view.records.reverse()
-    return render_template('view_model.html', Table=table_view, search_form=search_form)
+    return render_template('view_model.html', model=model_instance, Table=table_view, search_form=search_form)
 
 
 class AddView(View):
@@ -265,7 +268,8 @@ class ListView(View):
 
     def __init__(self, model):
         self.model = model
-        self.table_view = self._table_view(model, model.display_fields)
+        self.model_instance = model()
+        self.table_view = self._table_view(self.model_instance, model.display_fields)
         self.table_view.records = model.query.order_by(self.table_view.order.by).all()
         if not self.table_view.order.asc:
             self.table_view.records.reverse()
@@ -276,9 +280,9 @@ class ListView(View):
 
     class _table_view(object):
         def __init__(self, model, displayed_fields=None):
-
+            self.friendly_name = model.get_model_friendly_name()
             self.order = self._order(model)
-            self.model = model
+            self.model = type(model)
             self.name = type(model).__name__
             self.displayed = displayed_fields
 
