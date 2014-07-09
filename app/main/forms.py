@@ -1,9 +1,9 @@
-from flask.ext.wtf import Form 
-from wtforms import StringField, TextAreaField, BooleanField, SelectField,\
+from flask.ext.wtf import Form
+from wtforms import Field, StringField, TextAreaField, BooleanField, SelectField,\
     SubmitField, IntegerField, HiddenField, FileField, SelectMultipleField
 from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
-from wtforms.widgets import Select, HiddenInput
+import wtforms.widgets
 from flask.ext.pagedown.fields import PageDownField
 from ..models import L2Domain, L3Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion, City, Street, Location
 
@@ -34,6 +34,30 @@ class Unique(object):
             id = None
         if check and (id is None or id != check.id):
             raise ValidationError(self.message)
+
+
+class SearchWidget(wtforms.widgets.TextInput):
+    def __init__(self, error_class=u'has_errors'):
+        super(SearchWidget, self).__init__()
+        self.error_class = error_class
+
+    def __call__(self, field, **kwargs):
+        kwargs['class'] = u'form-control'
+        kwargs['placeholder'] = u'Search'
+        kwargs.setdefault('value','')
+        return super(SearchWidget, self).__call__(field, **kwargs)
+
+class SearchField(Field):
+  widget = SearchWidget()
+
+
+class SearchForm(Form):
+    def search_submit_widget(field, **kwargs):
+        search_submit_attr = wtforms.widgets.html_params(type_="submit", class_="btn btn-default btn-success")
+        return wtforms.widgets.HTMLString("<button %s><span class=\"glyphicon glyphicon-search\"></span></button>" % search_submit_attr)
+
+    search = SearchField('')
+    submit = SubmitField('Submit', widget=search_submit_widget)
 
 class HardwareTypeForm(Form):
     id = HiddenField()

@@ -21,7 +21,7 @@ class Config:
     FLASKY_FOLLOWERS_PER_PAGE = 50
     FLASKY_COMMENTS_PER_PAGE = 30
     FLASKY_SLOW_DB_QUERY_TIME=0.5
-    WHOOSH_BASE = "."
+    WHOOSH_BASE = "./whoosh_index"
 
     @staticmethod
     def init_app(app):

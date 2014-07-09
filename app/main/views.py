@@ -7,7 +7,7 @@ from flask.views import View
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
 from . import main
-from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm
+from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm, SearchForm
 from .. import db
 from ..models import L2Domain, L3Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion, City, Street, Location
 from .. import models
@@ -15,38 +15,59 @@ from . import forms
 from wtforms.widgets import Select
 from jinja2.exceptions import TemplateNotFound
 
+@main.route('/search', methods=['GET', 'POST'])
+@login_required
+def search():
+    search_form = SearchForm()
+    results = list()
+    if request.method == "POST":
+        search_term = request.form["search"]
+        print search_term
+        search_models = [System, Location, Hardware, HardwareModel, SoftwareVersion]
+        for model in search_models:
+            search_results = model.query.whoosh_search(search_term)
+            for search_result in search_results:
+                results.append(search_result)
+    return render_template('search.html', results=results, search_form=search_form)
+
+
 @main.route('/', methods=['GET'])
 @login_required
 def index():
+    search_form = SearchForm()
     groups = [(Vendor, L2Domain, L3Domain)]
-    return render_template('index.html', groups=groups)
+    return render_template('index.html', groups=groups, search_form=search_form)
 
 @main.route('/system', methods=['GET'])
 @login_required
 def system():
+    search_form = SearchForm()
     groups = [(System, SystemCategory)]
-    return render_template('index.html', groups=groups)
+    return render_template('index.html', groups=groups, search_form=search_form)
 
 @main.route('/hardware', methods=['GET'])
 @login_required
 def hardware():
+    search_form = SearchForm()
     groups = [(Hardware, HardwareModel, HardwareType)]
-    return render_template('index.html', groups=groups)
+    return render_template('index.html', groups=groups, search_form=search_form)
 
 @main.route('/software', methods=['GET'])
 @login_required
 def software():
+    search_form = SearchForm()
     groups = [(Software, SoftwareVersion)]
-    return render_template('index.html', groups=groups)
+    return render_template('index.html', groups=groups, search_form=search_form)
 
 @main.route('/locations', methods=['GET'])
 @login_required
 def locations():
+    search_form = SearchForm()
     groups = [(Country, County, City, Street, Location)]
-    return render_template('index.html', groups=groups)
+    return render_template('index.html', groups=groups, search_form=search_form)
 
 
-@main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
+@main.route('/parent_child/<parent>/<child>/<int:parent_id>', methods=['GET', 'POST'])
 @login_required
 def parent_child(parent, child, parent_id):
     parent = parent.replace("_", "")
@@ -107,6 +128,7 @@ def update_row(form, model, add=False):
 
 
 def generic_add(form, model, cascade=None):
+    search_form = SearchForm()
     model_type = model
     model_instance = model()
     #if request.method == 'POST':
@@ -120,11 +142,12 @@ def generic_add(form, model, cascade=None):
         cascade = list()
     template_name = 'edit_%s.html' % model_type.__name__.lower()
     try:
-        return render_template(template_name, form=form, Table=model_instance, cascade=cascade)
+        return render_template(template_name, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
     except TemplateNotFound:
-        return render_template('edit_model.html', form=form, Table=model_instance, cascade=cascade)
+        return render_template('edit_model.html', form=form, Table=model_instance, cascade=cascade, search_form=search_form)
 
 def generic_edit(id, form, model, cascade=None):
+    search_form = SearchForm()
     model_type = model
     model_instance = model.query.filter_by(id=id).first()
     form = populate_one_to_many_choices(form, model_instance)
@@ -160,9 +183,9 @@ def generic_edit(id, form, model, cascade=None):
         cascade = list()
     template_name = 'edit_%s.html' % model_type.__name__.lower()
     try:
-        return render_template(template_name, form=form, Table=model_instance, cascade=cascade)
+        return render_template(template_name, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
     except TemplateNotFound:
-        return render_template('edit_model.html', form=form, Table=model_type, cascade=cascade)
+        return render_template('edit_model.html', form=form, Table=model_type, cascade=cascade, search_form=search_form)
 
 def generic_delete(id, model):
     row = model.query.filter_by(id=id).first()
@@ -171,6 +194,7 @@ def generic_delete(id, model):
     return redirect(url_for(redirect_url))
 
 def generic_view(model, displayed_fields=None):
+    search_form = SearchForm()
     class table_view:
         name = type(model).__name__
         displayed = displayed_fields
@@ -191,7 +215,7 @@ def generic_view(model, displayed_fields=None):
     table_view.records = model.query.order_by(table_view.order.by).all()
     if not table_view.order.asc:
         table_view.records.reverse()
-    return render_template('view_model.html', Table=table_view)
+    return render_template('view_model.html', Table=table_view, search_form=search_form)
 
 
 class AddView(View):

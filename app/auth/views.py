@@ -6,6 +6,7 @@ from .. import db, login_manager
 from ..models import User
 from ..email import send_email
 from .forms import LoginForm
+from ..main.forms import SearchForm
 #from .forms import LoginForm, RegistrationForm, ChangePasswordForm,\
 #    PasswordResetRequestForm, PasswordResetForm, ChangeEmailForm
 

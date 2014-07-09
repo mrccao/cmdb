@@ -18,10 +18,17 @@ from app import create_app, db
 from app.models import L2Domain, L3Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, Country, HardwareType, Software, SoftwareVersion, Location, City, County, Street
 from flask.ext.script import Manager, Shell
 from flask.ext.migrate import Migrate, MigrateCommand
+import flask.ext.whooshalchemy
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
 migrate = Migrate(app, db)
+with app.app_context():
+    flask.ext.whooshalchemy.whoosh_index(app, System)
+    flask.ext.whooshalchemy.whoosh_index(app, Location)
+    flask.ext.whooshalchemy.whoosh_index(app, Hardware)
+    flask.ext.whooshalchemy.whoosh_index(app, HardwareModel)
+    flask.ext.whooshalchemy.whoosh_index(app, SoftwareVersion)
 
 
 def make_shell_context():

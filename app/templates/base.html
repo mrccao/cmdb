@@ -53,11 +53,16 @@
                     {% endif %}
                 </li>
            </ul>
-      <form class="navbar-form navbar-right" role="search">
+      <form class="navbar-form navbar-right" role="search" action="/search" method="POST">
         <div class="input-group">
             <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search">
-            <button type="button" class="btn btn-default btn-success" id="button" data-loading-text="Loading..."><span class="glyphicon glyphicon-search"></span></button>
+                {% if search_form and current_user.is_authenticated() %}
+                    {{ search_form.search }}
+                    {{ search_form.submit }}
+                {% else %}
+                    <input class="form-control disabled" id="search" name="search" placeholder="Search" type="text" value="" disabled>
+                    <button class="btn btn-default btn-success disabled" type_="submit" disabled><span class="glyphicon glyphicon-search"></span></button>
+                {% endif %}
             </div>
             
         </div>
