@@ -6,7 +6,6 @@ Flask-SQLAlchemy==1.0
 Flask-Login==0.2.11
 Flask-PageDown==0.1.4
 Markdown==2.4.1
-bleach==1.4
 Flask-WhooshAlchemy==0.56
 Flask-Script==2.0.5
 Flask-Migrate==1.2.0
