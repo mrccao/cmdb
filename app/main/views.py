@@ -317,10 +317,8 @@ for name, cls in inspect.getmembers(sys.modules["app.main.forms"]):
  
 model_cls = set()
 for name, cls in inspect.getmembers(sys.modules["app.models"]):
-    #print cls, type(cls), cls.__bases__
     if inspect.isclass(cls) and issubclass(cls, SqlAlchemyModel):
         model_cls.add(cls)
-    print cls
 
 model_forms = list()
 for model in model_cls:
@@ -335,8 +333,6 @@ for model, form in model_forms:
     main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
     main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, model, form))
     main.add_url_rule('/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
-    for field in model().get_columns_v2():
-        print field 
     #schema = whoosh.fields.Schema
     #for column in model().get_columns():
         #schema.add(column, whoosh.fields.ID)

@@ -1,28 +1,29 @@
-import hashlib
 import re
 
 import app
-from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import Table, Column, Integer, String, ForeignKey, Sequence
-from flask import current_app, request, url_for
-from flask.ext.login import UserMixin, AnonymousUserMixin
-from app.exceptions import ValidationError
-from . import db, login_manager
+from sqlalchemy import Table, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import class_mapper, ColumnProperty
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from flask.ext.login import UserMixin
+from . import db
 import flask.ext.whooshalchemy
 
 class GenericModel(object):
     def get_columns(self, one_to_many=False, foreign_key=False):
-        columns = list()
-        model_type = type(self)
-        for att in dir(model_type):
-            if hasattr(getattr(model_type, att), "property"):
-                if not one_to_many and not foreign_key:
-                    columns.append(att)
-                elif one_to_many and hasattr(getattr(model_type, att).property, "mapper"):
-                    columns.append(att)
-                if foreign_key and hasattr(getattr(model_type, att).property, "expression"):
-                    if getattr(model_type, att).property.expression.foreign_keys:
-                        columns.append(att)
+        columns = [prop.key for prop in class_mapper(self.__class__).iterate_properties
+                    if isinstance(prop, ColumnProperty)]
+        columns += class_mapper(self.__class__).relationships.keys()
+        if one_to_many:
+            columns = class_mapper(self.__class__).relationships.keys()
+        elif foreign_key:
+            fk = list()
+            for column in columns:
+                class_columns = class_mapper(self.__class__).columns
+                if column in class_columns.keys() and class_columns[column].foreign_keys:
+                    fk.append(column)
+            columns = fk
+        if columns is None:
+            columns = list()
         return columns
 
     def get_model_friendly_name(self):

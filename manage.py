@@ -70,7 +70,7 @@ def profile(length=25, profile_dir=None):
 
 @manager.command
 def deploy():
-    """Run deployment tasks."""
+    """ Run deployment tasks. """
     from flask.ext.migrate import upgrade
 
     # migrate database to latest revision
