@@ -6,6 +6,7 @@ from flask import render_template, redirect, url_for, abort, flash, request,curr
 from flask.views import View
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
+from flask_sqlalchemy import Model as SqlAlchemyModel
 from . import main
 from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm, SearchForm
 from .. import db
@@ -14,6 +15,9 @@ from .. import models
 from . import forms
 from wtforms.widgets import Select
 from jinja2.exceptions import TemplateNotFound
+import sqlalchemy
+
+import whoosh.fields
 
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
@@ -311,14 +315,12 @@ for name, cls in inspect.getmembers(sys.modules["app.main.forms"]):
         if "wtforms.ext.csrf.form.SecureForm" in base_cl and name.lower().endswith("form"):
             form_cls.append(cls)
  
-model_cls = list()
+model_cls = set()
 for name, cls in inspect.getmembers(sys.modules["app.models"]):
-    base_cls = list()
-    if hasattr(cls, "__bases__"):
-        base_cls = [str(base_cls.__bases__) for base_cls in cls.__bases__]
-    for base_cl in base_cls:
-        if "flask_sqlalchemy.Model" in base_cl:
-            model_cls.append(cls)
+    #print cls, type(cls), cls.__bases__
+    if inspect.isclass(cls) and issubclass(cls, SqlAlchemyModel):
+        model_cls.add(cls)
+    print cls
 
 model_forms = list()
 for model in model_cls:
@@ -326,9 +328,16 @@ for model in model_cls:
         if "%sform" % model.__name__.lower() == form.__name__.lower():
             model_forms.append((model, form))
             
+schemas = dict()
 for model, form in model_forms:
     name = model.__name__.lower()
     main.add_url_rule('/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
     main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
     main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, model, form))
     main.add_url_rule('/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
+    for field in model().get_columns_v2():
+        print field 
+    #schema = whoosh.fields.Schema
+    #for column in model().get_columns():
+        #schema.add(column, whoosh.fields.ID)
+    #print schema
