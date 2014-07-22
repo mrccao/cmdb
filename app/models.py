@@ -26,6 +26,14 @@ class GenericModel(object):
             columns = list()
         return columns
 
+    def get_dependencies(self):
+        """ Get the dependent objects """
+        dependencies = list()
+        for column in self.get_columns(one_to_many=True):
+            dependencies += getattr(self, column).all()
+        return dependencies
+
+
     def get_model_friendly_name(self):
         return re.sub("([a-z])([A-Z])","\g<1> \g<2>",self.__class__.__name__)
 
@@ -257,6 +265,8 @@ class Software(db.Model, GenericModel):
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     display_fields = ["name", "vendor"]
     order_by = "name"
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
 
 class SoftwareVersion(db.Model, GenericModel):
     __tablename__ = "SoftwareVersion"
@@ -268,7 +278,9 @@ class SoftwareVersion(db.Model, GenericModel):
     system = db.relationship("System", backref="software_version", lazy="dynamic")
     display_fields = ["software", "name"]
     order_by = "name"
- 
+    def __repr__(self):
+        return '<%s %r>' % (self.__class__.__name__, self.name)
+
 class System(db.Model, GenericModel):
     __tablename__ = "System"
     __searchable__ = ['name', 'management_ip']
