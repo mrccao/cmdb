@@ -1,5 +1,4 @@
 import sys
-import json
 import inspect
 
 from flask import render_template, redirect, url_for, abort, flash, request,current_app, make_response, jsonify
@@ -70,22 +69,33 @@ def locations():
     groups = [(Country, County, City, Street, Location)]
     return render_template('index.html', groups=groups, search_form=search_form)
 
+def get_model_from_string(model_string):
+    model_string = model_string.replace("_", "")
+    for name, cls in inspect.getmembers(sys.modules["app.models"]):
+        name = name.lower()
+        if name == model_string:
+            return cls
+ 
+@main.route('/dependencies/<model>/<int:id>', methods=['GET', 'POST'])
+@login_required
+def dependencies(model, id):
+    model = get_model_from_string(model)
+    model_instance = model.query.filter_by(id=id).first()
+    dependencies = list()
+    for dependency in model_instance.get_dependencies():
+        model_friendly_name = dependency.get_model_friendly_name()
+        model = type(dependency).__name__.lower()
+        name = dependency.name
+        id = dependency.id
+        dependencies.append((id, name, model, model_friendly_name))
+    return jsonify(results=dependencies)
+
 
 @main.route('/parent_child/<parent>/<child>/<int:parent_id>', methods=['GET', 'POST'])
 @login_required
 def parent_child(parent, child, parent_id):
-    parent = parent.replace("_", "")
-    child = child.replace("_", "")
-    parent_cls = None
-    child_cls = None
-    for name, cls in inspect.getmembers(sys.modules["app.models"]):
-        name = name.lower()
-        if name == parent:
-            parent_cls = cls
-        elif name == child:
-            child_cls = cls
-        if parent_cls and child_cls:
-            break
+    parent_cls = get_model_from_string(parent)
+    child_cls = get_model_from_string(child)
     options = ""
     for row in child_cls.query.filter(getattr(child_cls, parent).has(id=parent_id)):
         options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)

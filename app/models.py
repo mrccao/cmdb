@@ -30,7 +30,9 @@ class GenericModel(object):
         """ Get the dependent objects """
         dependencies = list()
         for column in self.get_columns(one_to_many=True):
-            dependencies += getattr(self, column).all()
+            attr = getattr(self, column)
+            if hasattr(attr, "all"):
+                dependencies += attr.all()
         return dependencies
 
 
@@ -194,7 +196,7 @@ class SystemCategory(db.Model, GenericModel):
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(255), unique=False)
     image = db.Column(db.String(255), unique=False)
-    system_id = db.Column(db.Integer, db.ForeignKey("System.id"))
+    system = db.relationship("System", backref="system_category", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
     
@@ -290,7 +292,7 @@ class System(db.Model, GenericModel):
     l3domain_id = db.Column(db.Integer, db.ForeignKey("L3Domain.id"))
     management_ip = db.Column(db.String(64))
     description = db.Column(db.String(255), unique=False)
-    system_category = db.relationship("SystemCategory", backref="system_category_system", lazy="dynamic")
+    system_category_id = db.Column(db.Integer, db.ForeignKey("SystemCategory.id"))
     l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))

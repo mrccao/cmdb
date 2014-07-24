@@ -1,5 +1,4 @@
-{% extends "bootstrap/base.html" %}
-
+{% extends "bootstrap/base.html" %} 
 {% block title %}nCMDB{% endblock %}
 
 {% block head %}
@@ -96,8 +95,8 @@
 {{ super() }}
 {{ moment.include_moment() }}
 <script>
-{% include 'filter_input.js' %}
-{% include 'input_group.js' %}
+    {% include 'filter_input.js' %}
+    {% include 'input_group.js' %}
 
     $(document).ready(function() {
         input_group($("input#notes"), "info-sign");
@@ -105,9 +104,7 @@
         input_group($("select#hardware_model"), "hdd");
         input_group($("input#asset_tag"), "tag");
         input_group($("select#software"), "floppy-disk");
-        {% block jquery_ready %}
-        {% endblock %}
+        {% block jquery_ready %}{% endblock %}
     });
-    <img src='/static/img/loading.gif' />
 </script>
 {% endblock %}

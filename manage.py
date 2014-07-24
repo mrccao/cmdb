@@ -94,7 +94,7 @@ def deploy():
     system = System()
     system.name = "Unknown"
     system.l2domain = L2Domain.query.first()
-    sc = SystemCategory.query.filter_by(name="Unknown")
+    sc = SystemCategory.query.filter_by(name="Unknown").first()
     system.system_category = sc
     db.session.add(system)
 

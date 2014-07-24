@@ -9,7 +9,7 @@
     </div>
     <a href="/add/{{ Table.name.lower() }}" type="button" class="btn btn-sm btn-success">Add</a>
     <div class="table-responsive">
-        <table class="table table-striped">
+        <table class="table table-striped table-hover">
             <thead>
                 <tr>
                 {% for column in Table.displayed %}
@@ -33,19 +33,24 @@
                         {% endfor %}
                         <td>
                             <!-- Button trigger modal -->
-                            <button class="btn btn-danger btn-xs" data-toggle="modal" data-target="#{{ Table.name.lower() }}-{{ row.id }}">Delete</button>
+                            <button id="delete-button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#{{ Table.name.lower() }}-{{ row.id }}">Delete
+                            </button>
                         </td>
 
                         <!-- Modal -->
-                        <div class="modal fade" id="{{ Table.name.lower() }}-{{ row.id }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                        <div class="modal" model-id="{{ row.id }}" model-name="{{ Table.name.lower() }}" id="{{ Table.name.lower() }}-{{ row.id }}" tabindex="-1" role="dialog" aria-labelledby="Delete {{ row.name }}" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                            <div class="modal-body">
+                            <div class="modal-header">
                                 <h4 class="modal-title" id="myModalLabel">Delete {{ row.name }}?</h4>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="model-id" value="{{ row.id }}">
+                                <input type="hidden" name="model-name" value="{{ Table.name.lower() }}">
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                                <a href="/delete/{{ Table.name.lower() }}/{{ row.id }}" type="button" class="btn btn-danger">Confirm</a>
+                                <a href="/delete/{{ Table.name.lower() }}/{{ row.id }}" type="button" class="btn btn-danger disabled">Confirm</a>
                             </div>
                             </div>
                         </div>
@@ -60,4 +65,9 @@
 {% block scripts %}
 {{ super() }}
 {{ pagedown.include_pagedown() }}
+{% endblock %}
+
+{% block jquery_ready %}
+{{ super() }}
+{% include 'dependencies.js' %}
 {% endblock %}
