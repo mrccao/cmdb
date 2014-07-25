@@ -176,8 +176,6 @@ def generic_edit(id, form, model, cascade=None):
                 form_field = getattr(form, field)
                 if field in model_instance.get_one_to_many_columns():
                     #  Multi Select
-                    #elif hasattr(value, "__class__") and "InstrumentedList" in value.__class__.__name__:
-                    #if form_field.widget.__class__ is Select and form_field.widget.multiple:
                     data = getattr(model_instance, field)
                     if hasattr(data, "__class__") and "InstrumentedList" in data.__class__.__name__:
                         form_field.data = map(lambda x: x.id, data)
@@ -343,7 +341,3 @@ for model, form in model_forms:
     main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
     main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, model, form))
     main.add_url_rule('/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
-    #schema = whoosh.fields.Schema
-    #for column in model().get_columns():
-        #schema.add(column, whoosh.fields.ID)
-    #print schema

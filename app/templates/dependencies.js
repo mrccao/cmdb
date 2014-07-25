@@ -20,13 +20,13 @@ $('.modal').on('shown.bs.modal', function() {
         title.append("<span class='glyphicon glyphicon-thumbs-down'></span> Dependency Check Failed");
         body.append("<div class='panel panel-danger'><div class='panel-heading'><h3 class='panel-title'>Dependencies</h3></div></div>");
         body.find(".panel").append("<div class='panel-body '>This item cannot be deleted until all dependencies are removed</div>");
-        body.find(".panel").append("<table class='table table-hover table-striped table-condensed'><thead><tr class='text-primary'><th>CI</th><th>Name</th></tr></thead><tbody></tbody></table>");
+        body.find(".panel").append("<table class='table table-hover table-striped table-condensed'><thead><tr class='text-primary'><th>CI</th><th>Name</th></tr></thead><tbody class='rowlink' data-link='row'></tbody></table>");
         var tbody = body.find("tbody");
         for (var i = 0; i < results.length; i++) {
             var id = results[i][0];
             var name = "<td>" + results[i][1] + "</td>";
             var model = results[i][2];
-            var friendy_name = "<td>" + results[i][3] + "</td>";
+            var friendy_name = "<td><a href='/view/" + model.toLowerCase() + "/?jump=" + id + "'>" + results[i][3] + "</a></td>";
             var row = "<tr>" + friendy_name + name + "</tr>";
             tbody.append(row);
         }

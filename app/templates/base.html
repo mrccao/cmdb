@@ -1,12 +1,17 @@
 {% extends "bootstrap/base.html" %} 
-{% block title %}nCMDB{% endblock %}
+{% block title %}nCMDB{% endblock title %}
 
 {% block head %}
 {{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='brand.css') }}">
 <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}?v=2" type="image/x-icon">
 <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}?v=2" type="image/x-icon">
-{% endblock %}
+{% endblock head %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jasny-bootstrap/3.1.3/css/jasny-bootstrap.min.css">
+{% endblock styles %}
 
 {% block navbar %}
 <div class="navbar transparent navbar-default navbar-fixed-top navbar-inverse" role="navigation">
@@ -76,7 +81,7 @@
    <div class="span4">...</div>
    <div class="span4">...</div>
 </div>
-{% endblock %}
+{% endblock navbar %}
 
 {% block content %}
 <div class="container">
@@ -87,24 +92,22 @@
     </div>
     {% endfor %}
 
-    {% block page_content %}{% endblock %}
+    {% block page_content %}{% endblock page_content%}
 </div>
-{% endblock %}
+{% endblock content %}
 
 {% block scripts %}
-{{ super() }}
-{{ moment.include_moment() }}
-<script>
-    {% include 'filter_input.js' %}
-    {% include 'input_group.js' %}
-
-    $(document).ready(function() {
+    {{ super() }}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jasny-bootstrap/3.1.3/js/jasny-bootstrap.min.js"></script>
+    <script>
+        {% include 'filter_input.js' %}
+        {% include 'input_group.js' %}
+        console.log("Document Ready Run");
         input_group($("input#notes"), "info-sign");
         input_group($("input#description"), "info-sign");
         input_group($("select#hardware_model"), "hdd");
         input_group($("input#asset_tag"), "tag");
         input_group($("select#software"), "floppy-disk");
-        {% block jquery_ready %}{% endblock %}
-    });
-</script>
-{% endblock %}
+        
+    </script>
+{% endblock scripts %}

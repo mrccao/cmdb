@@ -1,6 +1,5 @@
 function input_group(selector, icon, append) {
     if(typeof(append)==='undefined') append = false;
-    //var append = false;
     var input_group_div = '<div class="input-group"></div>';
     var input_group_addon_div = '<div class="input-group-addon"></div>';
     var icon = '<span class="glyphicon glyphicon-' + icon + '"></span>';
