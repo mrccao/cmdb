@@ -18,6 +18,9 @@ import sqlalchemy
 
 import whoosh.fields
 
+from ..navbar_group import navbar
+
+"""
 navbar = dict()
 navbar["Organization"] = (Vendor,)
 navbar["Domain"] = (L2Domain, L3Domain)
@@ -25,6 +28,7 @@ navbar["System"] = (System, SystemCategory)
 navbar["Hardware"] = (Hardware, HardwareModel, HardwareType)
 navbar["Software"] = (Software, SoftwareVersion)
 navbar["Location"] = (Country, County, City, Street, Location)
+"""
 
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
