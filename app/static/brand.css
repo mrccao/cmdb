@@ -1,3 +1,9 @@
+/* Navigation Bar dropdown on hover START */
+ul.nav li.dropdown:hover > ul.dropdown-menu {
+        display: block;    
+}
+/* Navigation Bar dropdown on hover END */
+
 .spacer {
     margin-top: 40px; /* define margin as you see fit */
 }

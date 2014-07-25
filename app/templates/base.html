@@ -27,11 +27,18 @@
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li><a href="{{ url_for('main.index') }}">Home</a></li>
-                <li><a href="{{ url_for('main.system') }}">System</a></li>
-                <li><a href="{{ url_for('main.software') }}">Software</a></li>
-                <li><a href="{{ url_for('main.hardware') }}">Hardware</a></li>
-                <li><a href="{{ url_for('main.locations') }}">Locations</a></li>
+                {% for group, items in navbar_groups.iteritems() %}
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        {{ group }}
+                        </a>
+                        <ul class="dropdown-menu" role="menu">
+                            {% for model in items %}
+                                <li><a href="/view/{{ model.__name__.lower() }}/">{{ model().get_model_friendly_name() }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>

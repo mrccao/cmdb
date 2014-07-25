@@ -18,6 +18,14 @@ import sqlalchemy
 
 import whoosh.fields
 
+navbar = dict()
+navbar["Organization"] = (Vendor,)
+navbar["Domain"] = (L2Domain, L3Domain)
+navbar["System"] = (System, SystemCategory) 
+navbar["Hardware"] = (Hardware, HardwareModel, HardwareType)
+navbar["Software"] = (Software, SoftwareVersion)
+navbar["Location"] = (Country, County, City, Street, Location)
+
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
@@ -31,43 +39,14 @@ def search():
             search_results = model.query.whoosh_search(search_term)
             for search_result in search_results:
                 results.append(search_result)
-    return render_template('search.html', results=results, search_form=search_form)
+    return render_template('search.html', results=results, navbar_groups=navbar, search_form=search_form)
 
 
 @main.route('/', methods=['GET'])
 @login_required
 def index():
     search_form = SearchForm()
-    groups = [(Vendor, L2Domain, L3Domain)]
-    return render_template('index.html', groups=groups, search_form=search_form)
-
-@main.route('/system', methods=['GET'])
-@login_required
-def system():
-    search_form = SearchForm()
-    groups = [(System, SystemCategory)]
-    return render_template('index.html', groups=groups, search_form=search_form)
-
-@main.route('/hardware', methods=['GET'])
-@login_required
-def hardware():
-    search_form = SearchForm()
-    groups = [(Hardware, HardwareModel, HardwareType)]
-    return render_template('index.html', groups=groups, search_form=search_form)
-
-@main.route('/software', methods=['GET'])
-@login_required
-def software():
-    search_form = SearchForm()
-    groups = [(Software, SoftwareVersion)]
-    return render_template('index.html', groups=groups, search_form=search_form)
-
-@main.route('/locations', methods=['GET'])
-@login_required
-def locations():
-    search_form = SearchForm()
-    groups = [(Country, County, City, Street, Location)]
-    return render_template('index.html', groups=groups, search_form=search_form)
+    return render_template('index.html', navbar_groups=navbar, search_form=search_form)
 
 def get_model_from_string(model_string):
     model_string = model_string.replace("_", "")
@@ -156,9 +135,9 @@ def generic_add(form, model, cascade=None):
         cascade = list()
     template_name = 'edit_%s.html' % model_type.__name__.lower()
     try:
-        return render_template(template_name, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+        return render_template(template_name, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
     except TemplateNotFound:
-        return render_template('edit_model.html', model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+        return render_template('edit_model.html',  navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
 
 def generic_edit(id, form, model, cascade=None):
     search_form = SearchForm()
@@ -195,9 +174,9 @@ def generic_edit(id, form, model, cascade=None):
         cascade = list()
     template_name = 'edit_%s.html' % model_type.__name__.lower()
     try:
-        return render_template(template_name, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+        return render_template(template_name, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
     except TemplateNotFound:
-        return render_template('edit_model.html', model=model_instance, form=form, Table=model_type, cascade=cascade, search_form=search_form)
+        return render_template('edit_model.html',  navbar_groups=navbar, model=model_instance, form=form, Table=model_type, cascade=cascade, search_form=search_form)
 
 def generic_delete(id, model):
     row = model.query.filter_by(id=id).first()
@@ -230,7 +209,7 @@ def generic_view(model, displayed_fields=None):
     table_view.records = model.query.order_by(table_view.order.by).all()
     if not table_view.order.asc:
         table_view.records.reverse()
-    return render_template('view_model.html', model=model_instance, Table=table_view, search_form=search_form)
+    return render_template('view_model.html',  navbar_groups=navbar, model=model_instance, Table=table_view, search_form=search_form)
 
 
 class AddView(View):
