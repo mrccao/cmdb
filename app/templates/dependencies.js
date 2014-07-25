@@ -4,7 +4,7 @@ $('.modal').on('shown.bs.modal', function() {
     var get_url = "/dependencies/" + model_name + "/" + model_id;
     var body = $(this).find(".modal-body");
     body.empty();
-    body.append("<div id='loading'><img src='/static/img/loading.gif' /> Calculating Dependencies</div>");
+    body.append("<div id='loading'><img src='/static/img/loading.gif' /> Checking Dependencies...</div>");
     dependencies = $.ajax({
         type: "GET",
         dataType: "json",
@@ -31,7 +31,7 @@ $('.modal').on('shown.bs.modal', function() {
             tbody.append(row);
         }
     } else {
-        body.append("<h5>No Dependencies</h5>");
+        body.append("<h5><span class='glyphicon glyphicon-ok'></span> No Dependencies</h5>");
         $(this).find(".modal-footer").find("a.btn").removeClass("disabled");
     }
 });

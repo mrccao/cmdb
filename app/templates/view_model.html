@@ -9,15 +9,27 @@
     <div class="col-sm-12">
 
     <div class="page-header">
-        <h1>{{ model.get_model_friendly_name() }}</h1>
+        <div class="row" >
+            <div class="col-sm-6 text-left text-info" >
+                <h1><strong>{{ model.get_model_friendly_name() }}</strong></h1>
+            </div>
+            <div class="col-sm-6 text-left" >
+            </div>
+        </div>
+        <div class="row" >
+            <div class="col-sm-6 text-left" >
+            </div>
+            <div class="col-sm-6 text-right" >
+                <a href="/add/{{ Table.name.lower() }}" type="button" class="btn btn-lg btn-success btn-labeled"><span class="btn-label btn-label-left"><i class="glyphicon glyphicon-plus"></i></span>Add</a>
+            </div>
+        </div>
     </div>
-    <a href="/add/{{ Table.name.lower() }}" type="button" class="btn btn-sm btn-success">Add</a>
     <div class="table-responsive">
-        <table class="table table-condensed table-striped table-hover">
+        <table class="table table-condensed table-striped table-hover text-left">
             <thead>
-                <tr>
+                <tr class="lead">
                     {% for column in Table.displayed %}
-                        <th>
+                        <th class="text-left">
                             {% if Table.order.asc %}
                                 <a href="{{ Table.name.lower() }}?sort={{ column }}&asc=0">
                             {% else %}
@@ -27,7 +39,7 @@
                             </a>
                         </th>
                     {% endfor %}
-                    <th>
+                    <th class="col-sm-1">
                     </th>
                 </tr>
             </thead>
@@ -38,9 +50,11 @@
                             <td><a href="/edit/{{ Table.name.lower() }}/{{ row.id }}">{{ row.display_column(column) }}</a></td>
                         {% endfor %}
                         <td class="rowlink-skip">
+                            <p class="text-right">
                             <!-- Button trigger modal -->
-                            <button id="delete-button" class="btn btn-labeled btn-danger btn-xs" data-toggle="modal" data-target="#{{ Table.name.lower() }}-{{ row.id }}"><span class="btn-label"><i class="glyphicon glyphicon-remove"></i></span>Delete
+                            <button id="delete-button" class="btn btn-labeled btn-danger btn-sm" data-toggle="modal" data-target="#{{ Table.name.lower() }}-{{ row.id }}"><span class="btn-label"><i class="glyphicon glyphicon-remove"></i></span>Delete
                             </button>
+                            </p>
                         </td>
 
                         <!-- START Modal -->

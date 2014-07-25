@@ -15,7 +15,7 @@
 
 {% block navbar %}
 <div class="navbar transparent navbar-default navbar-fixed-top navbar-inverse" role="navigation">
-    <div class="container">
+    <div class="container" class="lead">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
                 <span class="sr-only">Toggle navigation</span>
@@ -72,7 +72,7 @@
                     {{ search_form.submit }}
                 {% else %}
                     <input class="form-control disabled" id="search" name="search" placeholder="Search" type="text" value="" disabled>
-                    <button class="btn btn-default btn-success disabled" type_="submit" disabled><span class="glyphicon glyphicon-search"></span></button>
+                    <button class="btn btn-default btn-success btn-lg disabled" type_="submit" disabled><span class="glyphicon glyphicon-search"></span></button>
                 {% endif %}
             </div>
             

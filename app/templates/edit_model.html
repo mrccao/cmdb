@@ -4,7 +4,7 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>{{ model.get_model_friendly_name() }}</h1>
+    <blockquote><h1>{{ model.get_model_friendly_name() }}</h1></blockquote>
 </div>
 <div class="col-md-3">
     {{ wtf.quick_form(form) }}
