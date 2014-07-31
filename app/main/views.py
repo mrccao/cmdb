@@ -20,16 +20,6 @@ import whoosh.fields
 
 from ..navbar_group import navbar
 
-"""
-navbar = dict()
-navbar["Organization"] = (Vendor,)
-navbar["Domain"] = (L2Domain, L3Domain)
-navbar["System"] = (System, SystemCategory) 
-navbar["Hardware"] = (Hardware, HardwareModel, HardwareType)
-navbar["Software"] = (Software, SoftwareVersion)
-navbar["Location"] = (Country, County, City, Street, Location)
-"""
-
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
@@ -99,150 +89,121 @@ def populate_one_to_many_choices(form, model):
         setattr(getattr(form, column), "choices", choices)
     return form
 
-def update_row(form, model, add=False):
-    changed = False
-    foreign_keys = model.get_foreign_keys()
-    one_to_many_keys = model.get_one_to_many_columns()
-    for field in model.get_columns():
-        if field in form.__dict__:
-            if field in one_to_many_keys:
-                related_model = getattr(type(model), field).property.mapper.primary_base_mapper.entity
-                if type(getattr(form, field).data) is list:
-                    data = related_model.query.filter(related_model.id.in_(getattr(form, field).data))
-                else:
-                    data = related_model.query.filter_by(id=getattr(form, field).data)
-                try:
-                    setattr(model, field, data.all())
-                except AttributeError:
-                    setattr(model, field, data.first())
-            elif field not in one_to_many_keys:
-                setattr(model, field, getattr(form, field).data)
-    if add:
-        model.id = None
-    db.session.add(model)
-    db.session.commit()
-    return True
 
 
-def generic_add(form, model, cascade=None):
-    search_form = SearchForm()
-    model_type = model
-    model_instance = model()
-    #if request.method == 'POST':
-        #raise Exception()
-    form = populate_one_to_many_choices(form, model_instance)
-    if form.validate_on_submit():
-        update_row(form, model_instance, add=True)
-        redirect_url = "/view/%s" % model_type.__name__.lower()
-        return redirect(redirect_url)
-    if cascade == None:
-        cascade = list()
-    template_name = 'edit_%s.html' % model_type.__name__.lower()
-    try:
-        return render_template(template_name, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
-    except TemplateNotFound:
-        return render_template('edit_model.html',  navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
-
-def generic_edit(id, form, model, cascade=None):
-    search_form = SearchForm()
-    model_type = model
-    model_instance = model.query.filter_by(id=id).first()
-    form = populate_one_to_many_choices(form, model_instance)
-    if form.validate_on_submit():
-        redirect_url = "/view/%s" % model_type.__name__.lower()
-        update_row(form, model_instance)
-        return redirect(redirect_url)
-    else:
-        # Populate the form
-        for field in model_instance.get_columns():
-            if field in form.__dict__:
-                form_field = getattr(form, field)
-                if field in model_instance.get_one_to_many_columns():
-                    #  Multi Select
-                    data = getattr(model_instance, field)
-                    if hasattr(data, "__class__") and "InstrumentedList" in data.__class__.__name__:
-                        form_field.data = map(lambda x: x.id, data)
-                    #  Single Select
-                    else:
-                        if hasattr(data, "first"):
-                            data = data.first()
-                            if data is not None:
-                                form_field.data = data.id
-                            else:
-                                form_field.data = data
-                        else:
-                            form_field.data = data.id
-                else:
-                    form_field.data = getattr(model_instance, field)
-    if cascade is None:
-        cascade = list()
-    template_name = 'edit_%s.html' % model_type.__name__.lower()
-    try:
-        return render_template(template_name, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
-    except TemplateNotFound:
-        return render_template('edit_model.html',  navbar_groups=navbar, model=model_instance, form=form, Table=model_type, cascade=cascade, search_form=search_form)
-
-def generic_delete(id, model):
-    row = model.query.filter_by(id=id).first()
-    redirect_url = ".view_%s" % type(model).__name__.lower()
-    db.session.delete(row)
-    return redirect(url_for(redirect_url))
-
-def generic_view(model, displayed_fields=None):
-    search_form = SearchForm()
-    model_type = type(model)
-    model_instance = model
-    class table_view:
-        name = type(model).__name__
-        friendly_name = model.get_model_friendly_name()
-        displayed = displayed_fields
-        if not displayed_fields:
-            displayed = list()
-            for field in model.get_columns:
-                if field != "id":
-                    displayed.append(field)
-        class order:
-            by = "id"
-            if "name" in model.get_columns():
-                by = "name"
-            _sort = request.args.get("sort")
-            if _sort:
-                by = model.__dict__[_sort]
-            _asc = request.args.get("asc") or 1
-            asc = int(_asc)
-    table_view.records = model.query.order_by(table_view.order.by).all()
-    if not table_view.order.asc:
-        table_view.records.reverse()
-    return render_template('view_model.html',  navbar_groups=navbar, model=model_instance, Table=table_view, search_form=search_form)
-
-
-class AddView(View):
+class EditorView(View):
     methods = ['GET', 'POST']
 
     def __init__(self, form, model):
         self.model = model
         self.form = form
 
+    @staticmethod
+    def update_row(form, model, add=False):
+        changed = False
+        foreign_keys = model.get_foreign_keys()
+        one_to_many_keys = model.get_one_to_many_columns()
+        for field in model.get_columns():
+            if field in form.__dict__:
+                if field in one_to_many_keys:
+                    related_model = getattr(type(model), field).property.mapper.primary_base_mapper.entity
+                    if type(getattr(form, field).data) is list:
+                        data = related_model.query.filter(related_model.id.in_(getattr(form, field).data))
+                    else:
+                        data = related_model.query.filter_by(id=getattr(form, field).data)
+                    try:
+                        setattr(model, field, data.all())
+                    except AttributeError:
+                        setattr(model, field, data.first())
+                elif field not in one_to_many_keys:
+                    setattr(model, field, getattr(form, field).data)
+        if add:
+            model.id = None
+        db.session.add(model)
+        db.session.commit()
+        return True
+
+
+class AddView(EditorView):
+
     @login_required
     def dispatch_request(self):
         cascade = []
         if hasattr(self.model, "cascade"):
             cascade = self.model.cascade
-        return generic_add(self.form(), self.model, cascade=cascade)
+        return AddView.generic_add(self.form(), self.model, cascade=cascade)
 
-class EditView(View):
-    methods = ['GET', 'POST']
+    @staticmethod
+    def generic_add(form, model, cascade=None):
+        search_form = SearchForm()
+        model_type = model
+        model_instance = model()
+        #if request.method == 'POST':
+            #raise Exception()
+        form = populate_one_to_many_choices(form, model_instance)
+        if form.validate_on_submit():
+            AddView.update_row(form, model_instance, add=True)
+            redirect_url = "/view/%s" % model_type.__name__.lower()
+            return redirect(redirect_url)
+        if cascade == None:
+            cascade = list()
+        template_name = 'edit_%s.html' % model_type.__name__.lower()
+        for template in [template_name, "edit_model.html"]:
+            try:
+                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+            except TemplateNotFound:
+                pass
 
-    def __init__(self, model, form):
-        self.model = model
-        self.form = form
+
+class EditView(EditorView):
 
     @login_required
     def dispatch_request(self, id):
         cascade = []
         if hasattr(self.model, "cascade"):
             cascade = self.model.cascade
-        return generic_edit(id, self.form(), self.model, cascade=cascade)
+        return EditView.generic_edit(id, self.form(), self.model, cascade=cascade)
+
+    @staticmethod
+    def generic_edit(id, form, model, cascade=None):
+        search_form = SearchForm()
+        model_type = model
+        model_instance = model.query.filter_by(id=id).first()
+        form = populate_one_to_many_choices(form, model_instance)
+        if form.validate_on_submit():
+            redirect_url = "/view/%s" % model_type.__name__.lower()
+            EditView.update_row(form, model_instance)
+            return redirect(redirect_url)
+        else:
+            # Populate the form
+            for field in model_instance.get_columns():
+                if field in form.__dict__:
+                    form_field = getattr(form, field)
+                    if field in model_instance.get_one_to_many_columns():
+                        #  Multi Select
+                        data = getattr(model_instance, field)
+                        if hasattr(data, "__class__") and "InstrumentedList" in data.__class__.__name__:
+                            form_field.data = map(lambda x: x.id, data)
+                        #  Single Select
+                        else:
+                            if hasattr(data, "first"):
+                                data = data.first()
+                                if data is not None:
+                                    form_field.data = data.id
+                                else:
+                                    form_field.data = data
+                            else:
+                                form_field.data = data.id
+                    else:
+                        form_field.data = getattr(model_instance, field)
+        if cascade is None:
+            cascade = list()
+        template_name = 'edit_%s.html' % model_type.__name__.lower()
+        for template in [template_name, "edit_model.html"]:
+            try:
+                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+            except TemplateNotFound:
+                pass
 
 class DeleteView(View):
     methods = ['GET', 'POST']
@@ -271,8 +232,36 @@ class ListView(View):
 
     @login_required
     def dispatch_request(self):
-        return generic_view(self.model(), self.table_view.displayed)
+        return ListView.generic_list(self.model(), self.table_view.displayed)
 
+    @staticmethod
+    def generic_list(model, displayed_fields=None):
+        search_form = SearchForm()
+        model_type = type(model)
+        model_instance = model
+        class table_view:
+            name = type(model).__name__
+            friendly_name = model.get_model_friendly_name()
+            displayed = displayed_fields
+            if not displayed_fields:
+                displayed = list()
+                for field in model.get_columns:
+                    if field != "id":
+                        displayed.append(field)
+            class order:
+                by = "id"
+                if "name" in model.get_columns():
+                    by = "name"
+                _sort = request.args.get("sort")
+                if _sort:
+                    by = model.__dict__[_sort]
+                _asc = request.args.get("asc") or 1
+                asc = int(_asc)
+        table_view.records = model.query.order_by(table_view.order.by).all()
+        if not table_view.order.asc:
+            table_view.records.reverse()
+        return render_template('view_model.html',  navbar_groups=navbar, model=model_instance, Table=table_view, search_form=search_form)
+    
     class _table_view(object):
         def __init__(self, model, displayed_fields=None):
             self.friendly_name = model.get_model_friendly_name()
@@ -322,5 +311,5 @@ for model, form in model_forms:
     name = model.__name__.lower()
     main.add_url_rule('/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
     main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
-    main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, model, form))
+    main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, form, model))
     main.add_url_rule('/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
