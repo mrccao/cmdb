@@ -3,8 +3,8 @@
 {% import "_macros.html" as macros %}
 
 {% block page_content %}
-<div class="page-header">
-    <blockquote><h1>{{ model.get_model_friendly_name() }}</h1></blockquote>
+<div class="page-header text-info">
+    <h1><strong>{{ model.get_model_friendly_name() }}</strong></h1>
 </div>
 <div class="col-md-3">
     {{ wtf.quick_form(form) }}
