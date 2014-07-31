@@ -71,6 +71,9 @@ class GenericModel(object):
                     value = value.name
         return value
 
+    def get_column_type(self, column):
+        return getattr(type(self), column).property.columns[0].type
+        
     def get_one_to_many_columns(self):
         return self.get_columns(one_to_many=True)
 
@@ -82,7 +85,7 @@ class Location(db.Model, GenericModel):
     __doc__ = __tablename__
     __searchable__ = ['name', 'zip_code', 'street_number']
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    name = db.Column(db.Text(64), unique=True)
     zip_code = db.Column(db.String(64))
     street_number = db.Column(db.String(32))
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
@@ -100,7 +103,7 @@ class HardwareType(db.Model, GenericModel):
     __tablename__ = "HardwareType"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    name = db.Column(db.Text(64), unique=True)
     hardware = db.relationship("Hardware", backref="hardware_type", lazy="dynamic")
     hardware_model = db.relationship("HardwareModel", backref="hardware_type", lazy="dynamic")
     display_fields = ["name"]
@@ -112,7 +115,7 @@ class Street(db.Model, GenericModel):
     __tablename__ = "Street"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    name = db.Column(db.Text(64), unique=True)
     city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
     location = db.relationship("Location", backref="street", lazy="dynamic")
     display_fields = ["name", "city"]
@@ -125,7 +128,7 @@ class City(db.Model, GenericModel):
     __tablename__ = "City"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    name = db.Column(db.Text(64), unique=True)
     county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
     street = db.relationship("Street", backref="city", lazy="dynamic")
     location = db.relationship("Location", backref="city", lazy="dynamic")
@@ -139,7 +142,7 @@ class County(db.Model, GenericModel):
     __tablename__ = "County"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    name = db.Column(db.Text(64), unique=True)
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
     city = db.relationship("City", backref="county", lazy="dynamic")
     location = db.relationship("Location", backref="county", lazy="dynamic")
@@ -152,7 +155,7 @@ class Country(db.Model, GenericModel):
     __tablename__ = "Country"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
+    name = db.Column(db.Text(64), unique=True)
     code = db.Column(db.String(64), unique=True)
     county = db.relationship("County", backref="country", lazy="dynamic")
     location = db.relationship("Location", backref="country", lazy="dynamic")
@@ -167,7 +170,7 @@ class L2Domain(db.Model, GenericModel):
     __doc__ = "Layer 2 Domain"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    description = db.Column(db.String(255), unique=False)
+    description = db.Column(db.Text(255), unique=False)
     system = db.relationship("System", backref="l2domain", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
@@ -180,7 +183,7 @@ class L3Domain(db.Model, GenericModel):
     __doc__ = "Layer 3 Domain"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    description = db.Column(db.String(255), unique=False)
+    description = db.Column(db.Text(255), unique=False)
     system = db.relationship("System", backref="l3domain", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
@@ -193,8 +196,8 @@ class SystemCategory(db.Model, GenericModel):
     __tablename__ = "SystemCategory"
     __doc__ = "System Category"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
-    description = db.Column(db.String(255), unique=False)
+    name = db.Column(db.Text(64), unique=True)
+    description = db.Column(db.Text(255), unique=False)
     image = db.Column(db.String(255), unique=False)
     system = db.relationship("System", backref="system_category", lazy="dynamic")
     display_fields = ["name"]
@@ -224,7 +227,7 @@ class HardwareModel(db.Model, GenericModel):
     __searchable__ = ['name']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    description = db.Column(db.String(255))
+    description = db.Column(db.Text(255))
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     hardware = db.relationship("Hardware", backref="hardware_model", lazy="dynamic")
     hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))
@@ -242,7 +245,7 @@ systems_hardware = db.Table('systems_hardware',
 class Hardware(db.Model, GenericModel):
     __tablename__ = "Hardware"
     __doc__ = __tablename__
-    __searchable__ = ['name', 'asset_tag', 'coordiance']
+    __searchable__ = ['name', 'asset_tag', 'coordinance']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     asset_tag = db.Column(db.String(64), unique=True)
@@ -250,7 +253,7 @@ class Hardware(db.Model, GenericModel):
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))
     hardware_model_id = db.Column(db.Integer, db.ForeignKey("HardwareModel.id"))
-    notes = db.Column(db.String(255))
+    notes = db.Column(db.Text(255))
     order_by = "name"
     display_fields = ["name", "system", "vendor"]
     cascade = [("vendor", "hardware_model"), ("country", "county")]
@@ -291,7 +294,7 @@ class System(db.Model, GenericModel):
     name = db.Column(db.String(64), unique=True)
     l3domain_id = db.Column(db.Integer, db.ForeignKey("L3Domain.id"))
     management_ip = db.Column(db.String(64))
-    description = db.Column(db.String(255), unique=False)
+    description = db.Column(db.Text(255), unique=False)
     system_category_id = db.Column(db.Integer, db.ForeignKey("SystemCategory.id"))
     l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
