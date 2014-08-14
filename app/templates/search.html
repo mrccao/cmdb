@@ -12,14 +12,14 @@
         <tr class="lead">
             <th>CI</th>
             <th>Name</th>
-            <th>Match Text</th>
+            <th>Matched</th>
         </tr>
     </thead>
     <tbody data-link="row" class="rowlink">
-    {% for model_id, model_type, model_name, matched_terms in results %}
+    {% for score, model_id, model_name, model_type, ci_name, matched_terms in results %}
             <tr>
-                <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">{{ model_type }}</a></td>
                 <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">{{ model_name }}</a></td>
+                <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">{{ ci_name }}</a></td>
                 <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">
                 {% for matched_term in matched_terms %}
                     <p>

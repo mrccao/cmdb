@@ -164,9 +164,8 @@ class GenericModel(object):
 class Location(db.Model, GenericModel):
     __tablename__ = "Location"
     __doc__ = __tablename__
-    __searchable__ = ['name', 'zip_code', 'street_number']
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     zip_code = db.Column(db.String(64))
     street_number = db.Column(db.String(32))
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
@@ -184,7 +183,7 @@ class HardwareType(db.Model, GenericModel):
     __tablename__ = "HardwareType"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     hardware = db.relationship("Hardware", backref="hardware_type", lazy="dynamic")
     hardware_model = db.relationship("HardwareModel", backref="hardware_type", lazy="dynamic")
     display_fields = ["name"]
@@ -196,7 +195,7 @@ class Street(db.Model, GenericModel):
     __tablename__ = "Street"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
     location = db.relationship("Location", backref="street", lazy="dynamic")
     display_fields = ["name", "city"]
@@ -209,7 +208,7 @@ class City(db.Model, GenericModel):
     __tablename__ = "City"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     county_id = db.Column(db.Integer, db.ForeignKey("County.id"))
     street = db.relationship("Street", backref="city", lazy="dynamic")
     location = db.relationship("Location", backref="city", lazy="dynamic")
@@ -223,7 +222,7 @@ class County(db.Model, GenericModel):
     __tablename__ = "County"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     country_id = db.Column(db.Integer, db.ForeignKey("Country.id"))
     city = db.relationship("City", backref="county", lazy="dynamic")
     location = db.relationship("Location", backref="county", lazy="dynamic")
@@ -236,7 +235,7 @@ class Country(db.Model, GenericModel):
     __tablename__ = "Country"
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     code = db.Column(db.String(64), unique=True)
     county = db.relationship("County", backref="country", lazy="dynamic")
     location = db.relationship("Location", backref="country", lazy="dynamic")
@@ -277,7 +276,7 @@ class SystemCategory(db.Model, GenericModel):
     __tablename__ = "SystemCategory"
     __doc__ = "System Category"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text(64), unique=True)
+    name = db.Column(db.String(64), unique=True)
     description = db.Column(db.Text(255), unique=False)
     image = db.Column(db.String(255), unique=False)
     system = db.relationship("System", backref="system_category", lazy="dynamic")
@@ -305,7 +304,6 @@ class Vendor(db.Model, GenericModel):
 class HardwareModel(db.Model, GenericModel):
     __tablename__ = "HardwareModel"
     __doc__ = "Hardware Model"
-    __searchable__ = ['name']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.Text(255))
@@ -326,7 +324,6 @@ systems_hardware = db.Table('systems_hardware',
 class Hardware(db.Model, GenericModel):
     __tablename__ = "Hardware"
     __doc__ = __tablename__
-    __searchable__ = ['name', 'asset_tag', 'coordinance']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     asset_tag = db.Column(db.String(64), unique=True)
@@ -357,7 +354,6 @@ class Software(db.Model, GenericModel):
 class SoftwareVersion(db.Model, GenericModel):
     __tablename__ = "SoftwareVersion"
     __doc__ = __tablename__
-    __searchable__ = ['name']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     software_id = db.Column(db.Integer, db.ForeignKey("Software.id"))
@@ -369,7 +365,6 @@ class SoftwareVersion(db.Model, GenericModel):
 
 class System(db.Model, GenericModel):
     __tablename__ = "System"
-    __searchable__ = ['name', 'management_ip']
     __doc__ = __tablename__
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)

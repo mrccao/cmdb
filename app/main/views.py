@@ -1,3 +1,4 @@
+import re
 import sys
 import inspect
 
@@ -23,6 +24,7 @@ import whoosh.fields
 from ..navbar_group import navbar
 
 def pretty_print(text):
+    text = re.sub("([a-z])([A-Z])","\g<1> \g<2>", text)
     return text.replace("_", " ")
     
 @main.route('/search', methods=['GET', 'POST'])
@@ -44,13 +46,15 @@ def search():
             query = mparser.parse(search_term)
             with model()._get_index().searcher() as searcher:
                 for h in searcher.search(query, terms=True):
-                    model_id, model_type, model_name, = h["id"], h["model_name"],  h["name"]
+                    model_id, model_type, ci_name, score = h["id"], h["model_name"], h["name"], h.score
                     matched_terms = list()
                     for field, text in h.matched_terms():
-                        field = pretty_print(field)
-                        text = ("<mark>%s</mark>" % search_term_original).join(text.split(search_term_original))
+                        field = "<code>%s</code>" % pretty_print(field)
+                        text = ("<mark class='bg-danger'>%s</mark>" % search_term_original).join(text.split(search_term_original))
                         matched_terms.append(": ".join([field, text]))
-                    results.append((model_id, model_type, model_name, matched_terms))
+                    model_name = pretty_print(model_type)
+                    results.append((score, model_id, model_name, model_type, ci_name, matched_terms))
+        results = sorted(results, key=lambda attr: attr[0], reverse=True)
         return render_template('search.html', results=results, navbar_groups=navbar, search_form=search_form)
     return render_template('search.html', results=[], navbar_groups=navbar, search_form=search_form)
 

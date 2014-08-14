@@ -109,6 +109,7 @@
     <script>
         {% include 'filter_input.js' %}
         {% include 'input_group.js' %}
+        {% include 'jquery.hotkeys.js' %}
         console.log("Document Ready Run");
         input_group($("input#notes"), "info-sign");
         input_group($("input#description"), "info-sign");
@@ -116,5 +117,8 @@
         input_group($("input#asset_tag"), "tag");
         input_group($("select#software"), "floppy-disk");
         
+        $(document).on('keydown', null, 'esc', function(){
+              $("#search").focus();
+        });  
     </script>
 {% endblock scripts %}

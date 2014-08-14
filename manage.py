@@ -81,6 +81,8 @@ def deploy():
             m = model()
             m.name = init_item
             db.session.add(m)
+            db.session.commit()
+            m.add_index()
 
     db.session.commit()
     system = System()
@@ -89,15 +91,20 @@ def deploy():
     sc = SystemCategory.query.filter_by(name="Unknown").first()
     system.system_category = sc
     db.session.add(system)
+    db.session.commit()
+    system.add_index()
 
     software = Software()
     software.name = "IOS"
     software.vendor = Vendor.query.filter_by(name="Cisco").first()
     db.session.add(software)
+    software.add_index()
     software = Software()
     software.name = "NXOS"
     software.vendor = Vendor.query.filter_by(name="Cisco").first()
     db.session.add(software)
+    db.session.commit()
+    software.add_index()
 
     with open("iso-3166-2.txt", "r") as f:
         country_codes = f.readlines()
@@ -112,9 +119,8 @@ def deploy():
         c.name = country
         c.code = code
         db.session.add(c)
-
-    db.session.commit()
-
+        db.session.commit()
+        c.add_index()
 
 if __name__ == '__main__':
     manager.run()
