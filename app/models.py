@@ -1,14 +1,95 @@
 import re
 
+from pathlib import Path
+
 import app
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import class_mapper, ColumnProperty
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from flask.ext.login import UserMixin
 from . import db
-import flask.ext.whooshalchemy
+from flask import current_app
+from whoosh.index import create_in
+from whoosh.writing import AsyncWriter
+from whoosh import qparser, index
+import whoosh.fields
 
 class GenericModel(object):
+    def _get_schema(self):
+        try:
+            return self.schema
+        except AttributeError:
+            pass
+        self.schema = whoosh.fields.Schema()
+        for field in self._get_indexable_columns():
+            if hasattr(getattr(self, field), "primary_key") and getattr(self, field).primary_key:
+                self.schema.add(field, whoosh.fields.ID(unique=True))
+            elif field == "name":
+                self.schema.add(field, whoosh.fields.TEXT(stored=True, field_boost=2.0))
+            else:
+                self.schema.add(field, whoosh.fields.TEXT(stored=True))
+        self.schema.add("model_name", whoosh.fields.TEXT(stored=True))
+        return self.schema
+
+    def _get_indexable_columns(self):
+        for field in self.__table__.c.keys():
+            if self.__table__.c[field].name.endswith("_id"):
+                yield field.replace("_id", "")
+            else:
+                yield field
+        #for field in self.get_columns():
+        #    if hasattr(self.__mapper__.columns.get(field), "primary_key") and self.__mapper__.columns.get(field).primary_key:
+        #        yield field
+        #    #elif issubclass(type(getattr(self, field)), db.Model) or isinstance(getattr(self, field), basestring):
+        #    elif issubclass(type(getattr(self, field)), db.Model) or type(v.__mapper__.columns[field].type) == String:
+        #        yield field
+
+    def _get_index(self):
+        index_directory = "%s/%s" % (current_app.config.get("WHOOSH_BASE"), self.__class__.__name__)
+        if not Path(index_directory).exists():
+            Path(index_directory).mkdir()
+        model_index = None
+        if not index.exists_in(index_directory):
+            return create_in(index_directory, self._get_schema())
+        return index.open_dir(index_directory)
+        
+    def add_index(self):
+        self.update_index()
+
+    def search_index(self, search_term):
+        model_index = self._get_index()
+        schema = self._get_schema()
+        fields = list()
+        for field in self._get_indexable_columns():
+            value = getattr(self, field)
+            # Do not search the primary key
+            if not value.primary_key:
+                fields.append(field)
+        parser = qparser.MultifieldParser(fields, schema)
+        query = parser.parse(search_term)
+        with model_index.searcher() as searcher:
+            results = searcher.search(query)
+            for result in results:
+                yield result
+
+    def update_index(self):
+        model_index = self._get_index()
+        attrs = dict()
+        for field in self._get_indexable_columns():
+            value = getattr(self, field)
+            if hasattr(value, "name"):
+                attrs[field] = unicode(value.name.lower())
+            else:
+                attrs[field] = unicode(getattr(self, field)).lower()
+        attrs["model_name"] = unicode(self.__class__.__name__)
+        with AsyncWriter(model_index) as writer:
+            writer.update_document(**attrs)
+
+    def delete_index(self):
+        model_index = self._get_index()
+        with AsyncWriter(model_index) as writer:
+            writer.delete_by_term("id", unicode(self.id))
+        
     def get_columns(self, one_to_many=False, foreign_key=False):
         columns = [prop.key for prop in class_mapper(self.__class__).iterate_properties
                     if isinstance(prop, ColumnProperty)]

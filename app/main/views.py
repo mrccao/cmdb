@@ -1,7 +1,7 @@
 import sys
 import inspect
 
-from flask import render_template, redirect, url_for, abort, flash, request,current_app, make_response, jsonify
+from flask import render_template, redirect, url_for, abort, flash, request, current_app, make_response, jsonify
 from flask.views import View
 from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
@@ -15,25 +15,44 @@ from . import forms
 from wtforms.widgets import Select
 from jinja2.exceptions import TemplateNotFound
 import sqlalchemy
+from whoosh.qparser import MultifieldParser
+from whoosh.collectors import UnlimitedCollector
 
 import whoosh.fields
 
 from ..navbar_group import navbar
 
+def pretty_print(text):
+    return text.replace("_", " ")
+    
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
     search_form = SearchForm()
     results = list()
+    collector = UnlimitedCollector()
     if request.method == "POST":
-        search_term = request.form["search"]
-        print search_term
-        search_models = [System, Location, Hardware, HardwareModel, SoftwareVersion]
-        for model in search_models:
-            search_results = model.query.whoosh_search(search_term)
-            for search_result in search_results:
-                results.append(search_result)
-    return render_template('search.html', results=results, navbar_groups=navbar, search_form=search_form)
+        search_term_original = request.form["search"]
+        search_term_original = search_term_original.strip().strip("*")
+        search_term = "*%s*" % search_term_original
+        for model in get_model_classes():
+            fields = list()
+            for field in model()._get_indexable_columns():
+                if field != "id":
+                    fields.append(field)
+            mparser = MultifieldParser(fields, schema=model()._get_schema())
+            query = mparser.parse(search_term)
+            with model()._get_index().searcher() as searcher:
+                for h in searcher.search(query, terms=True):
+                    model_id, model_type, model_name, = h["id"], h["model_name"],  h["name"]
+                    matched_terms = list()
+                    for field, text in h.matched_terms():
+                        field = pretty_print(field)
+                        text = ("<mark>%s</mark>" % search_term_original).join(text.split(search_term_original))
+                        matched_terms.append(": ".join([field, text]))
+                    results.append((model_id, model_type, model_name, matched_terms))
+        return render_template('search.html', results=results, navbar_groups=navbar, search_form=search_form)
+    return render_template('search.html', results=[], navbar_groups=navbar, search_form=search_form)
 
 
 @main.route('/', methods=['GET'])
@@ -121,6 +140,7 @@ class EditorView(View):
             model.id = None
         db.session.add(model)
         db.session.commit()
+        model.update_index()
         return True
 
 
@@ -138,8 +158,6 @@ class AddView(EditorView):
         search_form = SearchForm()
         model_type = model
         model_instance = model()
-        #if request.method == 'POST':
-            #raise Exception()
         form = populate_one_to_many_choices(form, model_instance)
         if form.validate_on_submit():
             AddView.update_row(form, model_instance, add=True)
@@ -213,10 +231,11 @@ class DeleteView(View):
 
     @login_required
     def dispatch_request(self, id):
-        row = self.model.query.filter_by(id=id).first()
+        model_instance = self.model.query.filter_by(id=id).first()
         name = self.model.__name__.lower()
         redirect_url = ".view_%s" % name
-        db.session.delete(row)
+        model_instance.delete_index()
+        db.session.delete(model_instance)
         return redirect("/view/%s/" % name)
 
 class ListView(View):
@@ -287,27 +306,33 @@ class ListView(View):
                 self.asc = int(_asc)
   
 
-form_cls = list()
-for name, cls in inspect.getmembers(sys.modules["app.main.forms"]):
-    if hasattr(cls, "__bases__"):
-        base_cls = [str(base_cls.__bases__) for base_cls in cls.__bases__]
-    for base_cl in base_cls:
-        if "wtforms.ext.csrf.form.SecureForm" in base_cl and name.lower().endswith("form"):
-            form_cls.append(cls)
+def get_form_classes():
+    form_cls = list()
+    for name, cls in inspect.getmembers(sys.modules["app.main.forms"]):
+        if hasattr(cls, "__bases__"):
+            base_cls = [str(base_cls.__bases__) for base_cls in cls.__bases__]
+        for base_cl in base_cls:
+            if "wtforms.ext.csrf.form.SecureForm" in base_cl and name.lower().endswith("form"):
+                form_cls.append(cls)
+    return form_cls
  
-model_cls = set()
-for name, cls in inspect.getmembers(sys.modules["app.models"]):
-    if inspect.isclass(cls) and issubclass(cls, SqlAlchemyModel):
-        model_cls.add(cls)
+def get_model_classes():
+    model_cls = set()
+    for name, cls in inspect.getmembers(sys.modules["app.models"]):
+        if inspect.isclass(cls) and issubclass(cls, SqlAlchemyModel):
+            if cls.__name__.lower() not in ["user"]:
+                model_cls.add(cls)
+    return model_cls
 
-model_forms = list()
-for model in model_cls:
-    for form in form_cls:
-        if "%sform" % model.__name__.lower() == form.__name__.lower():
-            model_forms.append((model, form))
+def get_model_form_classes():
+    model_forms = list()
+    for model in get_model_classes():
+        for form in get_form_classes():
+            if "%sform" % model.__name__.lower() == form.__name__.lower():
+                model_forms.append((model, form))
+    return model_forms
             
-schemas = dict()
-for model, form in model_forms:
+for model, form in get_model_form_classes():
     name = model.__name__.lower()
     main.add_url_rule('/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
     main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))

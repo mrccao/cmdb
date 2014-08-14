@@ -11,14 +11,22 @@
     <thead>
         <tr class="lead">
             <th>CI</th>
+            <th>Name</th>
             <th>Match Text</th>
         </tr>
     </thead>
     <tbody data-link="row" class="rowlink">
-    {% for model in results %}
+    {% for model_id, model_type, model_name, matched_terms in results %}
             <tr>
-                <td><a href="/edit/{{ model.__class__.__name__.lower() }}/{{ model.id }}">{{ model.get_model_friendly_name() }}</a></td>
-                <td><a href="/edit/{{ model.__class__.__name__.lower() }}/{{ model.id }}">{{ model.name }}</a></td>
+                <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">{{ model_type }}</a></td>
+                <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">{{ model_name }}</a></td>
+                <td><a href="/edit/{{ model_type.lower() }}/{{ model_id }}">
+                {% for matched_term in matched_terms %}
+                    <p>
+                        {{ matched_term|safe }}
+                    </p>
+                {% endfor %}
+                </a></td>
             </tr>
     {% endfor %}
     </tbody>
