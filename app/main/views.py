@@ -46,7 +46,7 @@ def search():
             query = mparser.parse(search_term)
             with model()._get_index().searcher() as searcher:
                 for h in searcher.search(query, terms=True):
-                    model_id, model_type, ci_name, score = h["id"], h["model_name"], h["name"], h.score
+                    model_id, model_type, ci_name, score = h["model_id"], h["model_name"], h["name"], h.score
                     matched_terms = list()
                     for field, text in h.matched_terms():
                         field = "<code>%s</code>" % pretty_print(field)
@@ -87,15 +87,24 @@ def dependencies(model, id):
     return jsonify(results=dependencies)
 
 
-@main.route('/parent_child/<parent>/<child>/<int:parent_id>', methods=['GET', 'POST'])
+@main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
 @login_required
 def parent_child(parent, child, parent_id):
+    args = [parent, child, parent_id]
+    options = list()
+    if "undefined" in args or "null" in args:
+        options.append(("null", "null", "None"))
+        return jsonify(options=options)
+
     parent_cls = get_model_from_string(parent)
     child_cls = get_model_from_string(child)
-    options = ""
     for row in child_cls.query.filter(getattr(child_cls, parent).has(id=parent_id)):
-        options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)
-    return options
+        #options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)
+        options.append((parent_id, row.id, row.name))
+    if not options:
+        options.append(("null", "null", "None"))
+        #options = "<option parent='None' value='None'>None</option>"
+    return jsonify(options=options)
 
 
 def populate_one_to_many_choices(form, model):

@@ -84,16 +84,6 @@ def deploy():
             db.session.commit()
             m.add_index()
 
-    db.session.commit()
-    system = System()
-    system.name = "Unknown"
-    system.l2domain = L2Domain.query.first()
-    sc = SystemCategory.query.filter_by(name="Unknown").first()
-    system.system_category = sc
-    db.session.add(system)
-    db.session.commit()
-    system.add_index()
-
     software = Software()
     software.name = "IOS"
     software.vendor = Vendor.query.filter_by(name="Cisco").first()

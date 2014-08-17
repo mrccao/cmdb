@@ -22,8 +22,9 @@ class GenericModel(object):
             pass
         self.schema = whoosh.fields.Schema()
         for field in self._get_indexable_columns():
-            if hasattr(getattr(self, field), "primary_key") and getattr(self, field).primary_key:
-                self.schema.add(field, whoosh.fields.ID(unique=True))
+            #if hasattr(getattr(self, field), "primary_key") and getattr(self, field).primary_key:
+            if field == "id":
+                self.schema.add("model_id", whoosh.fields.ID(unique=True, stored=True))
             elif field == "name":
                 self.schema.add(field, whoosh.fields.TEXT(stored=True, field_boost=2.0))
             else:
@@ -37,12 +38,6 @@ class GenericModel(object):
                 yield field.replace("_id", "")
             else:
                 yield field
-        #for field in self.get_columns():
-        #    if hasattr(self.__mapper__.columns.get(field), "primary_key") and self.__mapper__.columns.get(field).primary_key:
-        #        yield field
-        #    #elif issubclass(type(getattr(self, field)), db.Model) or isinstance(getattr(self, field), basestring):
-        #    elif issubclass(type(getattr(self, field)), db.Model) or type(v.__mapper__.columns[field].type) == String:
-        #        yield field
 
     def _get_index(self):
         index_directory = "%s/%s" % (current_app.config.get("WHOOSH_BASE"), self.__class__.__name__)
@@ -61,6 +56,8 @@ class GenericModel(object):
         schema = self._get_schema()
         fields = list()
         for field in self._get_indexable_columns():
+            if field == "id":
+                field = "model_id"
             value = getattr(self, field)
             # Do not search the primary key
             if not value.primary_key:
@@ -77,18 +74,23 @@ class GenericModel(object):
         attrs = dict()
         for field in self._get_indexable_columns():
             value = getattr(self, field)
-            if hasattr(value, "name"):
+            if field == "id":
+                attrs["model_id"] = unicode(value)
+            elif hasattr(value, "name"):
                 attrs[field] = unicode(value.name.lower())
+                attrs["_stored_" + field] = unicode(value.name)
             else:
                 attrs[field] = unicode(getattr(self, field)).lower()
+                attrs["_stored_" + field] = unicode(getattr(self, field))
         attrs["model_name"] = unicode(self.__class__.__name__)
         with AsyncWriter(model_index) as writer:
             writer.update_document(**attrs)
 
     def delete_index(self):
         model_index = self._get_index()
+        document = None
         with AsyncWriter(model_index) as writer:
-            writer.delete_by_term("id", unicode(self.id))
+            writer.delete_by_term("model_id", unicode(self.id))
         
     def get_columns(self, one_to_many=False, foreign_key=False):
         columns = [prop.key for prop in class_mapper(self.__class__).iterate_properties

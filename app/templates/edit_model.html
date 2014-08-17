@@ -78,8 +78,18 @@
                         async: false
                         }).responseText;
                         $(current).data(get_url, new_children);
+                        new_children = JSON.parse(new_children).options;
                     }
-                    $(current).append(new_children);
+                    for (var i = 0; i < new_children.length; i++) {
+                        var parent_id = new_children[i][0];
+                        var row_id = new_children[i][1];
+                        var row_name = new_children[i][2];
+                        if (parent_id != "null" && row_id != "null" && row_name != "None") {
+                            $(current).append("<option parent='" + parent_id + "' value='" + row_id + "'>" + row_name + "</option>");
+                        } else {
+                            $(current).append("<option parent='" + parent_id + "' value='" + row_id + "'>None</option>");
+                        }
+                    }
                     $("div#" + parent_name + "_loading").remove();
                     $(current).prop("disabled", false);
                     $(current).show();
