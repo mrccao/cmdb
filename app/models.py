@@ -69,7 +69,7 @@ class GenericModel(object):
             for result in results:
                 yield result
 
-    def update_index(self):
+    def update_index(self, update_dependencies=True):
         model_index = self._get_index()
         attrs = dict()
         for field in self._get_indexable_columns():
@@ -85,6 +85,9 @@ class GenericModel(object):
         attrs["model_name"] = unicode(self.__class__.__name__)
         with AsyncWriter(model_index) as writer:
             writer.update_document(**attrs)
+            if update_dependencies:
+                for model in self.get_dependencies():
+                    model.update_index(update_dependencies=False)
 
     def delete_index(self):
         model_index = self._get_index()
