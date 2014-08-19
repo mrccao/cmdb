@@ -64,15 +64,15 @@
                     {% endif %}
                 </li>
            </ul>
-      <form class="navbar-form navbar-right" role="search" action="/search" method="POST">
+      <form class="navbar-form navbar-right" role="search">
         <div class="input-group">
             <div class="form-group">
                 {% if search_form and current_user.is_authenticated() %}
-                    {{ search_form.search }}
-                    {{ search_form.submit }}
+                    <input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" class="form-control disabled" id="search" name="search" placeholder="Search" type="text" value="">
+                    <button class="btn btn-default btn-success btn-default" type_="submit"><span class="glyphicon glyphicon-search"></span></button>
                 {% else %}
-                    <input class="form-control disabled" id="search" name="search" placeholder="Search" type="text" value="" disabled>
-                    <button class="btn btn-default btn-success btn-lg disabled" type_="submit" disabled><span class="glyphicon glyphicon-search"></span></button>
+                    <input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" class="form-control disabled" id="search" name="search" placeholder="Search" type="text" value="" disabled>
+                    <button class="btn btn-default btn-success btn-default disabled" type_="submit" disabled><span class="glyphicon glyphicon-search"></span></button>
                 {% endif %}
             </div>
             
@@ -91,7 +91,7 @@
 {% endblock navbar %}
 
 {% block content %}
-<div class="container">
+<div class="body-container container">
     {% for message in get_flashed_messages() %}
     <div class="alert alert-warning">
         <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -110,15 +110,22 @@
         {% include 'filter_input.js' %}
         {% include 'input_group.js' %}
         {% include 'jquery.hotkeys.js' %}
-        console.log("Document Ready Run");
+        {% include 'search.js' %}
+
+        // https://gist.github.com/cowboy/450017
+        jQuery.expr[':'].focus = function( elem ) {
+              return elem === document.activeElement && ( elem.type || elem.href );
+        };
+
         input_group($("input#notes"), "info-sign");
         input_group($("input#description"), "info-sign");
         input_group($("select#hardware_model"), "hdd");
         input_group($("input#asset_tag"), "tag");
         input_group($("select#software"), "floppy-disk");
         
-        $(document).on('keydown', null, 'esc', function(){
-              $("#search").focus();
-        });  
+        $(document).on('keydown', null, 'alt+1', function(){
+            $("ul.nav").find("li.dropdown").first().focus();
+        });
+
     </script>
 {% endblock scripts %}

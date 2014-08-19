@@ -27,12 +27,49 @@ def pretty_print(text):
     text = re.sub("([a-z])([A-Z])","\g<1> \g<2>", text)
     return text.replace("_", " ")
     
+@main.route('/instant-search', methods=['POST'])
+@login_required
+def instant_search():
+    results = list()
+    search_term_original = request.form["search"]
+    search_term_original = search_term_original.strip().strip("*")
+    search_term = "*%s*" % search_term_original
+    for model in get_model_classes():
+        fields = list()
+        for field in model()._get_indexable_columns():
+            if field != "id":
+                fields.append(field)
+        mparser = MultifieldParser(fields, schema=model()._get_schema())
+        query = mparser.parse(search_term)
+        with model()._get_index().searcher() as searcher:
+            for h in searcher.search(query, terms=True):
+                model_id, model_type, ci_name, score = h["model_id"], h["model_name"], h["name"], h.score
+                matched_terms = list()
+                for field, text in h.matched_terms():
+                    field = "<code>%s</code>" % pretty_print(field)
+                    text = ("<mark class='bg-danger'>%s</mark>" % search_term_original).join(text.split(search_term_original))
+                    matched_terms.append(": ".join([field, text]))
+                model_name = pretty_print(model_type)
+                results.append((score, model_id, model_name, model_type, ci_name, matched_terms))
+    results = sorted(results, key=lambda attr: attr[0], reverse=True)
+    html_results = ""
+    for score, model_id, model_name, model_type, ci_name, matched_terms in results:
+        html_results += "<tr>"
+        html_results += '<td><a href="/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, model_name)
+        html_results += '<td><a href="/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, ci_name)
+        html_results += '<td><a href="/edit/%s/%s">' % (model_type.lower(), model_id)
+        for matched_term in matched_terms:
+            html_results += "<p>" + matched_term + "</p>"
+        html_results += "</a></td></tr>"
+    return html_results
+
+
+"""
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
     search_form = SearchForm()
     results = list()
-    collector = UnlimitedCollector()
     if request.method == "POST":
         search_term_original = request.form["search"]
         search_term_original = search_term_original.strip().strip("*")
@@ -57,6 +94,7 @@ def search():
         results = sorted(results, key=lambda attr: attr[0], reverse=True)
         return render_template('search.html', results=results, navbar_groups=navbar, search_form=search_form)
     return render_template('search.html', results=[], navbar_groups=navbar, search_form=search_form)
+"""
 
 
 @main.route('/', methods=['GET'])

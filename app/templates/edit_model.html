@@ -14,6 +14,8 @@
 {% block scripts %}
 {{ super() }}
 <script>
+    $(".body-container").find("div.form-group").first().find("input").first().focus();
+
     var parent_name;
     {% for group in cascade %}
         {% for select in group %}
