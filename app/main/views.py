@@ -33,7 +33,13 @@ def instant_search():
     results = list()
     search_term_original = request.form["search"]
     search_term_original = search_term_original.strip().strip("*")
-    search_term = "*%s*" % search_term_original
+    search_term = search_term_original
+    if " " in search_term:
+        for word in search_term.split():
+            print word
+            search_term = ("*%s*" % word).join(search_term.split(word))
+    else:
+        search_term = "*%s*" % search_term_original
     for model in get_model_classes():
         fields = list()
         for field in model()._get_indexable_columns():
@@ -48,7 +54,8 @@ def instant_search():
                 matched_terms = list()
                 for field, text in h.matched_terms():
                     field = "<code>%s</code>" % pretty_print(field)
-                    text = ("<mark class='bg-danger'>%s</mark>" % search_term_original).join(text.split(search_term_original))
+                    for search_term_word in search_term_original.split():
+                        text = ("<mark class='bg-danger'>%s</mark>" % search_term_word).join(text.split(search_term_word))
                     matched_terms.append(": ".join([field, text]))
                 model_name = pretty_print(model_type)
                 results.append((score, model_id, model_name, model_type, ci_name, matched_terms))

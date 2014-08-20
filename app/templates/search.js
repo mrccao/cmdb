@@ -66,6 +66,7 @@ function apply_search_shortcuts() {
         var target = $(this);
         thread = setTimeout(function() { run_search(target.val()); }, 500); 
     });
+
     $("#search").on('keydown', null, 'return', function(){
         if ( $("#search").val().length < 3 && ! $("#search_results>tr").length ) {
             run_search($("#search").val(), false);
@@ -79,10 +80,15 @@ function apply_search_shortcuts() {
     $("#search").on('keydown', null, 'up', keyboard_up);
 
     $("input").on('keydown', null, 'esc', function(){
-        $("#search").focus();
         if ($("#search").is(":focus")) {
-            $("#search").val("");
-        }
+            if ( $("#search").val().length ) {
+                $("#search").val("");
+            } else {
+                location.reload();    
+            }
+        } else {
+            $("#search").focus();
+       }
     });
  
 }
