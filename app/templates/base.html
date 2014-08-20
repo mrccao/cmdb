@@ -110,12 +110,12 @@
         {% include 'filter_input.js' %}
         {% include 'input_group.js' %}
         {% include 'jquery.hotkeys.js' %}
-        {% include 'search.js' %}
-
         // https://gist.github.com/cowboy/450017
         jQuery.expr[':'].focus = function( elem ) {
               return elem === document.activeElement && ( elem.type || elem.href );
         };
+        {% include 'search.js' %}
+
 
         input_group($("input#notes"), "info-sign");
         input_group($("input#description"), "info-sign");
@@ -123,9 +123,6 @@
         input_group($("input#asset_tag"), "tag");
         input_group($("select#software"), "floppy-disk");
         
-        $(document).on('keydown', null, 'alt+1', function(){
-            $("ul.nav").find("li.dropdown").first().focus();
-        });
 
     </script>
 {% endblock scripts %}

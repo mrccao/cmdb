@@ -43,7 +43,7 @@
                     </th>
                 </tr>
             </thead>
-            <tbody data-link="row" class="rowlink">
+            <tbody data-link="row" class="rowlink" id="view_results">
                 {% for row in Table.records %}
                     <tr name="{{ row.id }}">
                         {% for column in Table.displayed %}

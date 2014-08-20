@@ -41,12 +41,16 @@
                     var child_selector = "select#" + child_name;
                     current = "select#" + child_name;
 
+                    /*
                     // Save the default starting values before the cascade logic
                     var stored_default = $(child_selector).data("selected");
                     if (stored_default == undefined || stored_default == null) {
                             var child_value = $(child_selector).val();
-                            $(child_selector).data("selected", child_value);
+                            if (child_value == "None") {
+                                $(child_selector).data("selected", child_value);
+                            }
                     }
+                    */
 
                     $(current).prop("disabled", true);
                     $(current).hide();
@@ -71,26 +75,23 @@
                     var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
                     var new_children;
                     // Load cached queries or make an Ajax call
-                    if ( $(current).data(get_url) !== undefined ) {
-                        new_children = $(current).data(get_url);
-                    } else {
-                        new_children = $.ajax({
-                        type: "GET",
-                        url: get_url,
-                        async: false
-                        }).responseText;
-                        $(current).data(get_url, new_children);
-                        new_children = JSON.parse(new_children).options;
-                    }
+                    new_children = $.ajax({
+                    type: "GET",
+                    url: get_url,
+                    async: false
+                    }).responseText;
+                    new_children = JSON.parse(new_children).options;
                     for (var i = 0; i < new_children.length; i++) {
                         var parent_id = new_children[i][0];
                         var row_id = new_children[i][1];
                         var row_name = new_children[i][2];
+                        var new_option;
                         if (parent_id != "null" && row_id != "null" && row_name != "None") {
-                            $(current).append("<option parent='" + parent_id + "' value='" + row_id + "'>" + row_name + "</option>");
+                            new_option = "<option parent='" + parent_id + "' value='" + row_id + "'>" + row_name + "</option>";
                         } else {
-                            $(current).append("<option parent='" + parent_id + "' value='" + row_id + "'>None</option>");
+                            new_option = "<option parent='" + parent_id + "' value='" + row_id + "'>None</option>";
                         }
+                        $(current).append(new_option);
                     }
                     $("div#" + parent_name + "_loading").remove();
                     $(current).prop("disabled", false);
@@ -98,12 +99,6 @@
                     $(current).children().removeAttr("selected");
                     $(current + " option:visible").first().attr("selected", "selected");
                     var child_attr = $(current).attr("child");
-
-                    // Set the select to the starting value
-                    var selected_item = $(current).data("selected");
-                    var selected_item_exists = 0 != $(current + ' option[value='+selected_item+']').length;
-                    if ( selected_item_exists ) 
-                        $(current).val(selected_item);
 
                     if ( typeof child_attr == "undefined" || child_attr == false) {
                         break;

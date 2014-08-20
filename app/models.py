@@ -30,6 +30,7 @@ class GenericModel(object):
             else:
                 self.schema.add(field, whoosh.fields.TEXT(stored=True))
         self.schema.add("model_name", whoosh.fields.TEXT(stored=True))
+        self.schema.add("model_type", whoosh.fields.TEXT(stored=True, field_boost=2.0))
         return self.schema
 
     def _get_indexable_columns(self):
@@ -83,6 +84,7 @@ class GenericModel(object):
                 attrs[field] = unicode(getattr(self, field)).lower()
                 attrs["_stored_" + field] = unicode(getattr(self, field))
         attrs["model_name"] = unicode(self.__class__.__name__)
+        attrs["model_type"] = unicode(self.get_model_friendly_name().lower())
         with AsyncWriter(model_index) as writer:
             writer.update_document(**attrs)
             if update_dependencies:

@@ -39,6 +39,7 @@ def instant_search():
         for field in model()._get_indexable_columns():
             if field != "id":
                 fields.append(field)
+        fields.append("model_type")
         mparser = MultifieldParser(fields, schema=model()._get_schema())
         query = mparser.parse(search_term)
         with model()._get_index().searcher() as searcher:
@@ -54,6 +55,8 @@ def instant_search():
     results = sorted(results, key=lambda attr: attr[0], reverse=True)
     html_results = ""
     for score, model_id, model_name, model_type, ci_name, matched_terms in results:
+        if model_id is None or model_id == u"None":
+            continue
         html_results += "<tr>"
         html_results += '<td><a href="/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, model_name)
         html_results += '<td><a href="/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, ci_name)
@@ -62,40 +65,6 @@ def instant_search():
             html_results += "<p>" + matched_term + "</p>"
         html_results += "</a></td></tr>"
     return html_results
-
-
-"""
-@main.route('/search', methods=['GET', 'POST'])
-@login_required
-def search():
-    search_form = SearchForm()
-    results = list()
-    if request.method == "POST":
-        search_term_original = request.form["search"]
-        search_term_original = search_term_original.strip().strip("*")
-        search_term = "*%s*" % search_term_original
-        for model in get_model_classes():
-            fields = list()
-            for field in model()._get_indexable_columns():
-                if field != "id":
-                    fields.append(field)
-            mparser = MultifieldParser(fields, schema=model()._get_schema())
-            query = mparser.parse(search_term)
-            with model()._get_index().searcher() as searcher:
-                for h in searcher.search(query, terms=True):
-                    model_id, model_type, ci_name, score = h["model_id"], h["model_name"], h["name"], h.score
-                    matched_terms = list()
-                    for field, text in h.matched_terms():
-                        field = "<code>%s</code>" % pretty_print(field)
-                        text = ("<mark class='bg-danger'>%s</mark>" % search_term_original).join(text.split(search_term_original))
-                        matched_terms.append(": ".join([field, text]))
-                    model_name = pretty_print(model_type)
-                    results.append((score, model_id, model_name, model_type, ci_name, matched_terms))
-        results = sorted(results, key=lambda attr: attr[0], reverse=True)
-        return render_template('search.html', results=results, navbar_groups=navbar, search_form=search_form)
-    return render_template('search.html', results=[], navbar_groups=navbar, search_form=search_form)
-"""
-
 
 @main.route('/', methods=['GET'])
 @login_required
@@ -140,7 +109,7 @@ def parent_child(parent, child, parent_id):
         #options += "<option parent='%s' value='%s'>%s</option>" % (parent_id, row.id, row.name)
         options.append((parent_id, row.id, row.name))
     if not options:
-        options.append(("null", "null", "None"))
+        options.append(("null", -1L, "None"))
         #options = "<option parent='None' value='None'>None</option>"
     return jsonify(options=options)
 
@@ -154,8 +123,8 @@ def populate_one_to_many_choices(form, model):
             continue
         related_model = getattr(model_type, column).property.mapper.primary_base_mapper.entity
         choices = [(r_column.id, getattr(r_column, related_model.order_by)) for r_column in related_model.query.order_by(related_model.order_by)]
-        if choices is None:
-            choices = list()
+        if not choices:
+            choices = [(-1L, "None")]
         setattr(getattr(form, column), "choices", choices)
     return form
 
@@ -262,7 +231,10 @@ class EditView(EditorView):
                                 else:
                                     form_field.data = data
                             else:
-                                form_field.data = data.id
+                                if data is None:
+                                    form_field.data = "None"
+                                else:
+                                    form_field.data = data.id
                     else:
                         form_field.data = getattr(model_instance, field)
         if cascade is None:
