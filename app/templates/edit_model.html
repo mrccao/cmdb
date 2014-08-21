@@ -72,15 +72,20 @@
                     current = "select#" + child_name;
                     var parent_id = $("select#" + parent_name).find(":selected").val();
                     
-                    var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
-                    var new_children;
-                    // Load cached queries or make an Ajax call
-                    new_children = $.ajax({
-                    type: "GET",
-                    url: get_url,
-                    async: false
-                    }).responseText;
-                    new_children = JSON.parse(new_children).options;
+                    if ( parent_id != "-1" ) {
+                        var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
+                        var new_children;
+                        // Load cached queries or make an Ajax call
+                        new_children = $.ajax({
+                            type: "GET",
+                            url: get_url,
+                            async: false
+                        }).responseText;
+                        new_children = JSON.parse(new_children).options;
+                    } else {
+                        // If the parent is None the children will also be None
+                        new_children = {"options": [["null", -1, "None"]]}.options;
+                    }
                     for (var i = 0; i < new_children.length; i++) {
                         var parent_id = new_children[i][0];
                         var row_id = new_children[i][1];
