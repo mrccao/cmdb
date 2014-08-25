@@ -2,7 +2,6 @@ import re
 
 from pathlib import Path
 
-import app
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import class_mapper, ColumnProperty
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -10,9 +9,9 @@ from flask.ext.login import UserMixin
 from . import db
 from flask import current_app
 from whoosh.index import create_in
-from whoosh.writing import AsyncWriter
 from whoosh import qparser, index
 import whoosh.fields
+import tasks
 
 class GenericModel(object):
     def _get_schema(self):
@@ -85,17 +84,14 @@ class GenericModel(object):
                 attrs["_stored_" + field] = unicode(getattr(self, field))
         attrs["model_name"] = unicode(self.__class__.__name__)
         attrs["model_type"] = unicode(self.get_model_friendly_name().lower())
-        with AsyncWriter(model_index) as writer:
-            writer.update_document(**attrs)
-            if update_dependencies:
-                for model in self.get_dependencies():
-                    model.update_index(update_dependencies=False)
+        tasks.update_index.delay(model_index, attrs)
+        if update_dependencies:
+            for dependent_model in self.get_dependencies():
+                dependent_model.update_index(update_dependencies=False)
 
     def delete_index(self):
         model_index = self._get_index()
-        document = None
-        with AsyncWriter(model_index) as writer:
-            writer.delete_by_term("model_id", unicode(self.id))
+        tasks.delete_index.delay(model_index, self.id)
         
     def get_columns(self, one_to_many=False, foreign_key=False):
         columns = [prop.key for prop in class_mapper(self.__class__).iterate_properties
@@ -180,6 +176,7 @@ class Location(db.Model, GenericModel):
     city_id = db.Column(db.Integer, db.ForeignKey("City.id"))
     street_id = db.Column(db.Integer, db.ForeignKey("Street.id"))
     system = db.relationship("System", backref="location", lazy="dynamic")
+    hardware = db.relationship("Hardware", backref="location", lazy="dynamic")
     display_fields = ["name", "street", "city", "country"]
     order_by = "name"
     cascade = [("country", "county", "city", "street")]
@@ -334,6 +331,7 @@ class Hardware(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     asset_tag = db.Column(db.String(64), unique=True)
+    location_id = db.Column(db.Integer, db.ForeignKey("Location.id"))
     coordinance = db.Column(db.String(64), unique=True)
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))

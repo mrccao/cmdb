@@ -44,9 +44,13 @@ function open_search_result() {
     if ( $("#search_results>tr").length ) {
         $("#search_results").find("tr.info").find("a").click();
         return false;
+    } else if ( $("#view_results>tr").length ) {
+        $("#view_results").find("tr.info").find("a").click();
+        return false;
     }
     return true;
 }
+
 function apply_search_shortcuts() {
     var thread = null;
  
@@ -60,6 +64,7 @@ function apply_search_shortcuts() {
     
     $(document).on('keydown', null, 'down', keyboard_down);
     $(document).on('keydown', null, 'up', keyboard_up);
+    $(document).on('keydown', null, 'return', open_search_result);
 
    $('#search').keyup(function() {
         clearTimeout(thread);
@@ -68,7 +73,8 @@ function apply_search_shortcuts() {
     });
 
     $("#search").on('keydown', null, 'return', function(){
-        if ( $("#search").val().length < 3 && ! $("#search_results>tr").length ) {
+        console.log( "bang" );
+        if ( $("#search").val().length < 3 && ! $("#search_results>tr").length  && !$("#view_results").find("tr.info").length ) {
             run_search($("#search").val(), false);
             return false;
         } else {

@@ -22,6 +22,7 @@ class Config:
     FLASKY_COMMENTS_PER_PAGE = 30
     FLASKY_SLOW_DB_QUERY_TIME=0.5
     WHOOSH_BASE = "./whooshv2_index"
+    CELERY_BROKER_URL = "amqp://localhost"
 
     @staticmethod
     def init_app(app):
