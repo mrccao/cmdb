@@ -36,34 +36,6 @@ class Unique(object):
             raise ValidationError(self.message)
 
 
-class SearchWidget(wtforms.widgets.TextInput):
-    def __init__(self, error_class=u'has_errors'):
-        super(SearchWidget, self).__init__()
-        self.error_class = error_class
-
-    def __call__(self, field, **kwargs):
-        kwargs['class'] = u'form-control'
-        kwargs['placeholder'] = u'Search'
-        kwargs.setdefault('value','')
-        return super(SearchWidget, self).__call__(field, **kwargs)
-
-class SearchField(Field):
-  widget = SearchWidget()
-
-
-class SearchForm(Form):
-    def search_submit_widget(field, **kwargs):
-        search_submit_attr = wtforms.widgets.html_params(type_="submit", class_="btn btn-default btn-success")
-        return wtforms.widgets.HTMLString("<button %s><span class=\"glyphicon glyphicon-search\"></span></button>" % search_submit_attr)
-
-    search = SearchField('')
-    submit = SubmitField('Submit', widget=search_submit_widget)
-
-
-class Asset(Form):
-    submit = SubmitField('Submit')
-
-
 class HardwareTypeForm(Form):
     id = HiddenField()
     name = StringField('Hardware Type', validators=[Required(), Unique(HardwareType, HardwareType.name)])
@@ -116,6 +88,7 @@ class L2DomainForm(Form):
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
+
 class L3DomainForm(Form):
     id = HiddenField()
     name = StringField('Name', validators=[Required(), Unique(L3Domain, L3Domain.name)])
@@ -129,6 +102,7 @@ class SystemCategoryForm(Form):
     description = StringField('Description', validators=[Length(max=255)])
     image = FileField(u'Image File')
     submit = SubmitField('Submit')
+
 
 class SystemForm(Form):
     id = HiddenField()
@@ -144,6 +118,7 @@ class SystemForm(Form):
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
+
 class HardwareForm(Form):
     id = HiddenField()
     name = StringField('Serial Number', validators=[Required(), Unique(Hardware, Hardware.name), Length(min=2, max=64)])
@@ -156,10 +131,12 @@ class HardwareForm(Form):
     notes = StringField('Notes', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
+
 class VendorForm(Form):
     id = HiddenField()
     name = StringField('Vendor Name', validators=[Required(), Unique(Vendor, Vendor.name), Length(min=2, max=64)])
     submit = SubmitField('Submit')
+
 
 class SoftwareForm(Form):
     id = HiddenField()
@@ -167,11 +144,13 @@ class SoftwareForm(Form):
     vendor = SelectField('Vendor', coerce=int)
     submit = SubmitField('Submit')
 
+
 class SoftwareVersionForm(Form):
     id = HiddenField()
     name = StringField('Software version', validators=[Required(), Unique(SoftwareVersion, SoftwareVersion.name), Length(min=1, max=64)])
     software = SelectField('Software', coerce=int)
     submit = SubmitField('Submit')
+
 
 class HardwareModelForm(Form):
     id = HiddenField()
@@ -180,5 +159,4 @@ class HardwareModelForm(Form):
     hardware_type = SelectField('HardwareType', coerce=int)
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
-
 

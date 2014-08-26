@@ -37,7 +37,7 @@ def pretty_print(text):
     text = re.sub("([a-z])([A-Z])","\g<1> \g<2>", text)
     return text.replace("_", " ")
     
-@main.route(app_prefix + '/instant-search', methods=['POST'])
+@main.route(app_prefix + '/instant-search/', methods=['POST'])
 @login_required
 def instant_search():
     results = list()
@@ -88,7 +88,7 @@ def instant_search():
 def index():
     return render_template('index.html')
 
-@main.route(app_prefix, methods=['GET'])
+@main.route(app_prefix + "/", methods=['GET'])
 @login_required
 def asset_index():
     return render_template('asset_index.html', navbar_groups=navbar)
@@ -101,7 +101,7 @@ def get_model_from_string(model_string):
         if name == model_string:
             return cls
  
-@main.route(app_prefix + '/dependencies/<model>/<int:id>', methods=['GET', 'POST'])
+@main.route(app_prefix + '/dependencies/<model>/<int:id>/', methods=['GET', 'POST'])
 @login_required
 def dependencies(model, id):
     model = get_model_from_string(model)
@@ -116,7 +116,7 @@ def dependencies(model, id):
     return jsonify(results=dependencies)
 
 
-@main.route(app_prefix + '/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
+@main.route(app_prefix + '/parent_child/<parent>/<child>/<parent_id>/', methods=['GET', 'POST'])
 @login_required
 def parent_child(parent, child, parent_id):
     args = [parent, child, parent_id]
@@ -378,5 +378,5 @@ for model, form in get_model_form_classes():
     name = model.__name__.lower()
     main.add_url_rule(app_prefix + '/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
     main.add_url_rule(app_prefix + '/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
-    main.add_url_rule(app_prefix + '/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, form, model))
-    main.add_url_rule(app_prefix + '/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
+    main.add_url_rule(app_prefix + '/edit/%s/<int:id>/' % name, view_func=EditView.as_view("edit_%s" % name, form, model))
+    main.add_url_rule(app_prefix + '/delete/%s/<int:id>/' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
