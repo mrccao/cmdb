@@ -15,10 +15,10 @@ if os.path.exists('.env'):
             os.environ[var[0]] = var[1]
 
 from app import create_app, db
-from app.models import L2Domain, L3Domain, System, Vendor
-from app.models import HardwareModel, Hardware, SystemCategory
-from app.models import Country, HardwareType, Software, SoftwareVersion
-from app.models import Location, City, County, Street
+from app.models import L2Domain, L3Domain, System, Vendor, \
+                       HardwareModel, Hardware, SystemCategory, \
+                       Country, HardwareType, Software, SoftwareVersion, \
+                       Location, City, County, Street
 
 from flask.ext.script import Manager, Shell
 from flask.ext.migrate import Migrate, MigrateCommand
@@ -108,6 +108,7 @@ def deploy():
     software.name = "IOS"
     software.vendor = Vendor.query.filter_by(name="Cisco").first()
     db.session.add(software)
+    db.session.commit()
     software.add_index()
     software = Software()
     software.name = "NXOS"

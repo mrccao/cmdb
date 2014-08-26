@@ -2,15 +2,15 @@ import re
 
 from pathlib import Path
 
+from . import db
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import class_mapper, ColumnProperty
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from flask.ext.login import UserMixin
-from . import db
 from flask import current_app
+import whoosh.fields
 from whoosh.index import create_in
 from whoosh import qparser, index
-import whoosh.fields
 import tasks
 
 class GenericModel(object):
@@ -21,7 +21,6 @@ class GenericModel(object):
             pass
         self.schema = whoosh.fields.Schema()
         for field in self._get_indexable_columns():
-            #if hasattr(getattr(self, field), "primary_key") and getattr(self, field).primary_key:
             if field == "id":
                 self.schema.add("model_id", whoosh.fields.ID(unique=True, stored=True))
             elif field == "name":
