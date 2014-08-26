@@ -16,3 +16,30 @@
         </li>
     {% endfor %}
 {% endblock navbar_items %}
+
+
+{% block search_bar %}
+    {{ super() }}
+    {% set search_disabled = "" %}
+    {% if not current_user.is_authenticated() %}
+        {% set search_disabled = "disabled" %}
+    {% endif %}
+
+    <input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" class="form-control disabled" id="search" name="search" placeholder="Search Assets" type="text" value="" {{ search_disabled }}>
+    <button class="btn btn-default btn-success btn-default {{ search_disabled }}" type_="submit" {{ search_disabled }}><span class="glyphicon glyphicon-search"></span></button>
+{% endblock search_bar %}
+ 
+{% block scripts %}
+    {{ super() }}
+    <script>
+        {% include 'filter_input.js' %}
+        {% include 'input_group.js' %}
+        {% include 'search.js' %}
+
+        input_group($("input#notes"), "info-sign");
+        input_group($("input#description"), "info-sign");
+        input_group($("select#hardware_model"), "hdd");
+        input_group($("input#asset_tag"), "tag");
+        input_group($("select#software"), "floppy-disk");
+    </script>
+{% endblock scripts %}
