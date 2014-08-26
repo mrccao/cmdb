@@ -125,9 +125,7 @@ function run_search(search_term, check_term) {
     }
     $("#search_results").empty();
     $("#search_results").append(loading);
-    $.post( "/instant-search", {search: search_term}, function( data ) {
-        //$(document).off('keydown', keyboard_down);
-        //$(document).off('keydown', keyboard_up);
+    $.post( "/assets/instant-search", {search: search_term}, function( data ) {
         $("#search_results").empty();
         $("#search_results").append(data);
         $("#search_results tr:first-child").addClass("info");

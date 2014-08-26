@@ -59,10 +59,16 @@ class SearchForm(Form):
     search = SearchField('')
     submit = SubmitField('Submit', widget=search_submit_widget)
 
+
+class Asset(Form):
+    submit = SubmitField('Submit')
+
+
 class HardwareTypeForm(Form):
     id = HiddenField()
     name = StringField('Hardware Type', validators=[Required(), Unique(HardwareType, HardwareType.name)])
     submit = SubmitField('Submit')
+
 
 class LocationForm(Form):
     id = HiddenField()

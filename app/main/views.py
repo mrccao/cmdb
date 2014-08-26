@@ -8,7 +8,7 @@ from flask.ext.login import login_required, current_user
 from flask.ext.sqlalchemy import get_debug_queries
 from flask_sqlalchemy import Model as SqlAlchemyModel
 from . import main
-from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm, SearchForm
+from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm
 from .. import db
 from ..models import L2Domain, L3Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion, City, Street, Location
 from .. import models
@@ -21,13 +21,23 @@ from whoosh.collectors import UnlimitedCollector
 
 import whoosh.fields
 
-from ..navbar_group import navbar
+#from ..navbar_group import navbar
+
+navbar = dict()
+navbar["Organization"] = (Vendor,)
+navbar["Domain"] = (L2Domain, L3Domain)
+navbar["System"] = (System, SystemCategory)
+navbar["Hardware"] = (Hardware, HardwareModel, HardwareType)
+navbar["Software"] = (Software, SoftwareVersion)
+navbar["Location"] = (Country, County, City, Street, Location)
+
+app_prefix = "/assets"
 
 def pretty_print(text):
     text = re.sub("([a-z])([A-Z])","\g<1> \g<2>", text)
     return text.replace("_", " ")
     
-@main.route('/instant-search', methods=['POST'])
+@main.route(app_prefix + '/instant-search', methods=['POST'])
 @login_required
 def instant_search():
     results = list()
@@ -65,9 +75,9 @@ def instant_search():
         if model_id is None or model_id == u"None":
             continue
         html_results += "<tr>"
-        html_results += '<td><a href="/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, model_name)
-        html_results += '<td><a href="/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, ci_name)
-        html_results += '<td><a href="/edit/%s/%s">' % (model_type.lower(), model_id)
+        html_results += '<td><a href="/assets/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, model_name)
+        html_results += '<td><a href="/assets/edit/%s/%s">%s</a></td>' % (model_type.lower(), model_id, ci_name)
+        html_results += '<td><a href="/assets/edit/%s/%s">' % (model_type.lower(), model_id)
         for matched_term in matched_terms:
             html_results += "<p>" + matched_term + "</p>"
         html_results += "</a></td></tr>"
@@ -76,8 +86,13 @@ def instant_search():
 @main.route('/', methods=['GET'])
 @login_required
 def index():
-    search_form = SearchForm()
-    return render_template('index.html', navbar_groups=navbar, search_form=search_form)
+    return render_template('index.html')
+
+@main.route(app_prefix, methods=['GET'])
+@login_required
+def asset_index():
+    return render_template('asset_index.html', navbar_groups=navbar)
+
 
 def get_model_from_string(model_string):
     model_string = model_string.replace("_", "")
@@ -86,7 +101,7 @@ def get_model_from_string(model_string):
         if name == model_string:
             return cls
  
-@main.route('/dependencies/<model>/<int:id>', methods=['GET', 'POST'])
+@main.route(app_prefix + '/dependencies/<model>/<int:id>', methods=['GET', 'POST'])
 @login_required
 def dependencies(model, id):
     model = get_model_from_string(model)
@@ -101,7 +116,7 @@ def dependencies(model, id):
     return jsonify(results=dependencies)
 
 
-@main.route('/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
+@main.route(app_prefix + '/parent_child/<parent>/<child>/<parent_id>', methods=['GET', 'POST'])
 @login_required
 def parent_child(parent, child, parent_id):
     args = [parent, child, parent_id]
@@ -182,20 +197,19 @@ class AddView(EditorView):
 
     @staticmethod
     def generic_add(form, model, cascade=None):
-        search_form = SearchForm()
         model_type = model
         model_instance = model()
         form = populate_one_to_many_choices(form, model_instance)
         if form.validate_on_submit():
             AddView.update_row(form, model_instance, add=True)
-            redirect_url = "/view/%s" % model_type.__name__.lower()
+            redirect_url = app_prefix + "/view/%s" % model_type.__name__.lower()
             return redirect(redirect_url)
         if cascade == None:
             cascade = list()
         template_name = 'edit_%s.html' % model_type.__name__.lower()
         for template in [template_name, "edit_model.html"]:
             try:
-                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade)
             except TemplateNotFound:
                 pass
 
@@ -211,12 +225,11 @@ class EditView(EditorView):
 
     @staticmethod
     def generic_edit(id, form, model, cascade=None):
-        search_form = SearchForm()
         model_type = model
         model_instance = model.query.filter_by(id=id).first()
         form = populate_one_to_many_choices(form, model_instance)
         if form.validate_on_submit():
-            redirect_url = "/view/%s" % model_type.__name__.lower()
+            redirect_url = app_prefix + "/view/%s" % model_type.__name__.lower()
             EditView.update_row(form, model_instance)
             return redirect(redirect_url)
         else:
@@ -249,7 +262,7 @@ class EditView(EditorView):
         template_name = 'edit_%s.html' % model_type.__name__.lower()
         for template in [template_name, "edit_model.html"]:
             try:
-                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, search_form=search_form)
+                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade)
             except TemplateNotFound:
                 pass
 
@@ -266,7 +279,7 @@ class DeleteView(View):
         redirect_url = ".view_%s" % name
         model_instance.delete_index()
         db.session.delete(model_instance)
-        return redirect("/view/%s/" % name)
+        return redirect(app_prefix + "/view/%s/" % name)
 
 class ListView(View):
     methods = ['GET', 'POST']
@@ -285,7 +298,6 @@ class ListView(View):
 
     @staticmethod
     def generic_list(model, displayed_fields=None):
-        search_form = SearchForm()
         model_type = type(model)
         model_instance = model
         class table_view:
@@ -309,7 +321,7 @@ class ListView(View):
         table_view.records = model.query.order_by(table_view.order.by).all()
         if not table_view.order.asc:
             table_view.records.reverse()
-        return render_template('view_model.html',  navbar_groups=navbar, model=model_instance, Table=table_view, search_form=search_form)
+        return render_template('view_model.html',  navbar_groups=navbar, model=model_instance, Table=table_view)
     
     class _table_view(object):
         def __init__(self, model, displayed_fields=None):
@@ -364,7 +376,7 @@ def get_model_form_classes():
             
 for model, form in get_model_form_classes():
     name = model.__name__.lower()
-    main.add_url_rule('/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
-    main.add_url_rule('/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
-    main.add_url_rule('/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, form, model))
-    main.add_url_rule('/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))
+    main.add_url_rule(app_prefix + '/view/%s/' % name, view_func=ListView.as_view("view_%s" % name, model))
+    main.add_url_rule(app_prefix + '/add/%s/' % name, view_func=AddView.as_view("add_%s" % name, form, model))
+    main.add_url_rule(app_prefix + '/edit/%s/<int:id>' % name, view_func=EditView.as_view("edit_%s" % name, form, model))
+    main.add_url_rule(app_prefix + '/delete/%s/<int:id>' % name, view_func=DeleteView.as_view("delete_%s" % name, model))

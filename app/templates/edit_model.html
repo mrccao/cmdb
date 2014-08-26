@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "assets.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "_macros.html" as macros %}
 
@@ -73,7 +73,7 @@
                     var parent_id = $("select#" + parent_name).find(":selected").val();
                     
                     if ( parent_id != "-1" ) {
-                        var get_url = "/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
+                        var get_url = "/assets/parent_child/" + parent_name + "/" + child_name + "/" + parent_id;
                         var new_children;
                         // Load cached queries or make an Ajax call
                         new_children = $.ajax({

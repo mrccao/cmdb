@@ -1,7 +1,7 @@
 $('.modal').on('shown.bs.modal', function() {
     var model_id = $(this).attr("model-id");
     var model_name = $(this).attr("model-name");
-    var get_url = "/dependencies/" + model_name + "/" + model_id;
+    var get_url = "/assets/dependencies/" + model_name + "/" + model_id;
     var body = $(this).find(".modal-body");
     body.empty();
     body.append("<div id='loading'><img src='/static/img/loading.gif' /> Checking Dependencies...</div>");
@@ -26,7 +26,7 @@ $('.modal').on('shown.bs.modal', function() {
             var id = results[i][0];
             var name = "<td>" + results[i][1] + "</td>";
             var model = results[i][2];
-            var friendy_name = "<td><a href='/view/" + model.toLowerCase() + "/?jump=" + id + "'>" + results[i][3] + "</a></td>";
+            var friendy_name = "<td><a href='/assets/view/" + model.toLowerCase() + "/?jump=" + id + "'>" + results[i][3] + "</a></td>";
             var row = "<tr>" + friendy_name + name + "</tr>";
             tbody.append(row);
         }
