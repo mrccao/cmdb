@@ -1,71 +1,11 @@
-from flask import Markup
 from flask.ext.wtf import Form
 from wtforms import Field, StringField, TextAreaField, BooleanField, SelectField,\
-    SubmitField, IntegerField, HiddenField, FileField, SelectMultipleField, DateField
+    SubmitField, IntegerField, HiddenField, FileField, SelectMultipleField
 from wtforms.validators import Required, Length, Email, Regexp, IPAddress
-from wtforms import ValidationError 
-import wtforms.widgets
 from flask.ext.pagedown.fields import PageDownField
 from ..models import L2Domain, L3Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion, City, Street, Location
-
-
-class Unique(object):
-    """ validator that checks field uniqueness """
-    def __init__(self, model, field, message=None):
-        self.model = model
-        self.field = field
-        if not message:
-            message = u'this element already exists'
-        self.message = message
-
-    def __call__(self, form, field):         
-        check = self.model.query.filter(self.field == field.data).first()
-        if "id" in form:
-            id_type = type(form.id.data)
-            if id_type in [int]:
-                id = long(form.id.data)
-            elif id_type in [str, unicode]:
-                try:
-                    id = long(form.id.data)
-                except ValueError:
-                    id = None
-            else:
-                id = form.id.data
-        else:
-            id = None
-        if check and (id is None or id != check.id):
-            raise ValidationError(self.message)
-
-class BootstrapDateWidget(object):
-    def __init__(self, data_date_viewmode="days", date_view_format="dd-mm-yyyy"):
-        self.data_date_viewmode = data_date_viewmode
-        self.date_view_format = date_view_format
-
-    def __call__(self, field, **kwargs):
-        data_date_viewmode = self.data_date_viewmode
-        date_view_format = self.date_view_format
-        kwargs['class'] = u'form-control date-picker'
-        #kwargs['readonly'] = None
-        html = u""
-        html += u'<div class="input-group" >'
-        html += u'<span class="input-group-addon">'
-        html += u'<span class="glyphicon glyphicon-calendar"></span>'
-        html += u'</span>'
-        html += u'<input %s data-date-viewmode="%s" date-view-format="%s">' % (wtforms.widgets.html_params(**kwargs), data_date_viewmode, date_view_format)
-        html += u'</div>'
-        return html
-
-
-class dDateField(DateField):
-    widget = BootstrapDateWidget(data_date_viewmode="days", date_view_format="dd-mm-yyyy")
-
-
-class mDateField(DateField):
-    widget = BootstrapDateWidget(data_date_viewmode="months", date_view_format="dd-mm-yyyy")
-
-
-class yDateField(DateField):
-    widget = BootstrapDateWidget(data_date_viewmode="years", date_view_format="dd-mm-yyyy")
+from .custom_fields import bDateField
+from .custom_field_validators import Unique
 
 
 class HardwareTypeForm(Form):
@@ -158,8 +98,6 @@ class HardwareForm(Form):
     vendor = SelectField('Vendor', coerce=int, )
     hardware_type = SelectField('HardwareType', coerce=int)
     hardware_model = SelectField('HardwareModel', coerce=int)
-    eos = yDateField('End of Sale')
-    eol = yDateField('End of Life')
     location = SelectField('Location', coerce=int, )
     coordinance = StringField('Location Coordinance', validators=[Required()])
     notes = StringField('Notes', validators=[Length(max=255)])
@@ -191,6 +129,9 @@ class HardwareModelForm(Form):
     name = StringField('Hardware Model Name', validators=[Required(), Unique(HardwareModel, HardwareModel.name), Length(min=2, max=64)])
     vendor = SelectField('Vendor', default=2, coerce=int)
     hardware_type = SelectField('HardwareType', coerce=int)
+    eos = bDateField('End of Sale', date_viewmode="years")
+    eol = bDateField('End of Life', date_viewmode="years")
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
+
 

@@ -1,6 +1,7 @@
 import re
 import sys
 import inspect
+import datetime
 
 from flask import render_template, redirect, url_for, abort, flash, request, current_app, make_response, jsonify
 from flask.views import View
@@ -18,10 +19,9 @@ from jinja2.exceptions import TemplateNotFound
 import sqlalchemy
 from whoosh.qparser import MultifieldParser
 from whoosh.collectors import UnlimitedCollector
-
 import whoosh.fields
 
-#from ..navbar_group import navbar
+from ..utilities import inspect_model_db
 
 navbar = dict()
 navbar["Organization"] = (Vendor,)
@@ -49,7 +49,6 @@ def instant_search():
     search_term = search_term_original.lower()
     if " " in search_term:
         for word in search_term.split():
-            print word
             search_term = ("*%s*" % word).join(search_term.split(word))
     else:
         search_term = "*%s*" % search_term_original
@@ -248,7 +247,6 @@ class EditView(EditorView):
         if hasattr(self.model, "cascade"):
             cascade = self.model.cascade
         return EditView.generic_edit(id, self.form(), self.model, cascade=cascade)
-
     @staticmethod
     def generic_edit(id, form, model, cascade=None):
         model_type = model
@@ -266,8 +264,8 @@ class EditView(EditorView):
                 if field in form.__dict__:
                     form_field = getattr(form, field)
                     if field in model_instance.get_one_to_many_columns():
-                        #  Multi Select
                         data = getattr(model_instance, field)
+                        #  Multi Select
                         if hasattr(data, "__class__") and "InstrumentedList" in data.__class__.__name__:
                             form_field.data = map(lambda x: x.id, data)
                         #  Single Select
@@ -284,7 +282,10 @@ class EditView(EditorView):
                                 else:
                                     form_field.data = data.id
                     else:
-                        form_field.data = getattr(model_instance, field)
+                        if type(getattr(model_instance, field)) is datetime.datetime:
+                            form_field.data = getattr(model_instance, field).strftime("%Y-%m-%d")
+                        else:
+                            form_field.data = getattr(model_instance, field)
         if cascade is None:
             cascade = list()
         template_name = 'edit_%s.html' % model_type.__name__.lower()
@@ -377,7 +378,6 @@ class ListView(View):
                 _sort = request.args.get("sort")
                 _asc = request.args.get("asc") or 1
                 self.asc = int(_asc)
-  
 
 def get_form_classes():
     form_cls = list()

@@ -1,4 +1,5 @@
 import re
+import datetime
 
 from pathlib import Path
 
@@ -11,8 +12,11 @@ from flask import current_app
 import whoosh.fields
 from whoosh.index import create_in
 from whoosh import qparser, index
-import tasks
 
+import tasks
+from utilities import inspect_model_db
+
+   
 class GenericModel(object):
     def _get_schema(self):
         try:
@@ -25,6 +29,8 @@ class GenericModel(object):
                 self.schema.add("model_id", whoosh.fields.ID(unique=True, stored=True))
             elif field == "name":
                 self.schema.add(field, whoosh.fields.ID(stored=True, field_boost=2.0))
+            elif inspect_model_db.column_datetype:
+                self.schema.add(field, whoosh.fields.DATETIME(stored=True))
             else:
                 self.schema.add(field, whoosh.fields.TEXT(stored=True))
         self.schema.add("model_name", whoosh.fields.TEXT(stored=True))
@@ -310,6 +316,8 @@ class HardwareModel(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.Text(255))
+    eos = db.Column(db.DateTime(64), default=datetime.datetime.now())
+    eol = db.Column(db.DateTime(64), default=datetime.datetime.now())
     vendor_id = db.Column(db.Integer, db.ForeignKey("Vendor.id"))
     hardware = db.relationship("Hardware", backref="hardware_model", lazy="dynamic")
     hardware_type_id = db.Column(db.Integer, db.ForeignKey("HardwareType.id"))
