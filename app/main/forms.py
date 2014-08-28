@@ -36,26 +36,37 @@ class Unique(object):
         if check and (id is None or id != check.id):
             raise ValidationError(self.message)
 
-class BootstrapDateWidget(wtforms.widgets.TextInput):
-    def __init__(self, error_class=u'has_errors'):
-        super(BootstrapDateWidget, self).__init__()
-        self.error_class = error_class
+class BootstrapDateWidget(object):
+    def __init__(self, data_date_viewmode="days", date_view_format="dd-mm-yyyy"):
+        self.data_date_viewmode = data_date_viewmode
+        self.date_view_format = date_view_format
 
     def __call__(self, field, **kwargs):
-        kwargs['type'] = u'text'
+        data_date_viewmode = self.data_date_viewmode
+        date_view_format = self.date_view_format
         kwargs['class'] = u'form-control date-picker'
-        kwargs['readonly'] = None
-        html = ""
-        html += '<div class="input-group" data-date-format="dd-mm-yyyy">'
-        html += '<span class="input-group-addon">'
-        html += '<span class="glyphicon glyphicon-calendar"></span>'
-        html += '</span>'
-        html += '<input %s>' % wtforms.widgets.html_params(**kwargs)
-        html += '</div>'
+        #kwargs['readonly'] = None
+        html = u""
+        html += u'<div class="input-group" >'
+        html += u'<span class="input-group-addon">'
+        html += u'<span class="glyphicon glyphicon-calendar"></span>'
+        html += u'</span>'
+        html += u'<input %s data-date-viewmode="%s" date-view-format="%s">' % (wtforms.widgets.html_params(**kwargs), data_date_viewmode, date_view_format)
+        html += u'</div>'
         return html
 
-class bDateField(DateField):
-  widget = BootstrapDateWidget()
+
+class dDateField(DateField):
+    widget = BootstrapDateWidget(data_date_viewmode="days", date_view_format="dd-mm-yyyy")
+
+
+class mDateField(DateField):
+    widget = BootstrapDateWidget(data_date_viewmode="months", date_view_format="dd-mm-yyyy")
+
+
+class yDateField(DateField):
+    widget = BootstrapDateWidget(data_date_viewmode="years", date_view_format="dd-mm-yyyy")
+
 
 class HardwareTypeForm(Form):
     id = HiddenField()
@@ -147,8 +158,8 @@ class HardwareForm(Form):
     vendor = SelectField('Vendor', coerce=int, )
     hardware_type = SelectField('HardwareType', coerce=int)
     hardware_model = SelectField('HardwareModel', coerce=int)
-    eos = bDateField('End of Sale')
-    eol = bDateField('End of Life')
+    eos = yDateField('End of Sale')
+    eol = yDateField('End of Life')
     location = SelectField('Location', coerce=int, )
     coordinance = StringField('Location Coordinance', validators=[Required()])
     notes = StringField('Notes', validators=[Length(max=255)])
