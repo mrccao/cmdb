@@ -9,7 +9,11 @@
 <div class="col-md-3">
     {{ wtf.quick_form(form) }}
 </div>
-{% endblock %}
+<div class="col-md-6">
+{% block page_detail %}
+{% endblock page_detail %}
+</div>
+{% endblock page_content %}
 
 {% block scripts %}
 {{ super() }}
@@ -40,17 +44,6 @@
                     var child_name = $(current).attr("child");
                     var child_selector = "select#" + child_name;
                     current = "select#" + child_name;
-
-                    /*
-                    // Save the default starting values before the cascade logic
-                    var stored_default = $(child_selector).data("selected");
-                    if (stored_default == undefined || stored_default == null) {
-                            var child_value = $(child_selector).val();
-                            if (child_value == "None") {
-                                $(child_selector).data("selected", child_value);
-                            }
-                    }
-                    */
 
                     $(current).prop("disabled", true);
                     $(current).hide();

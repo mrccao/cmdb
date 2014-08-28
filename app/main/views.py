@@ -31,6 +31,9 @@ navbar["Hardware"] = (Hardware, HardwareModel, HardwareType)
 navbar["Software"] = (Software, SoftwareVersion)
 navbar["Location"] = (Country, County, City, Street, Location)
 
+related_info = dict()
+related_info[System] = ((Hardware, ("hardware_type", "hardware_model", "name")),)
+
 app_prefix = "/assets"
 
 def pretty_print(text):
@@ -43,7 +46,7 @@ def instant_search():
     results = list()
     search_term_original = request.form["search"]
     search_term_original = search_term_original.strip().strip("*")
-    search_term = search_term_original
+    search_term = search_term_original.lower()
     if " " in search_term:
         for word in search_term.split():
             print word
@@ -213,9 +216,32 @@ class AddView(EditorView):
             except TemplateNotFound:
                 pass
 
+def camel_to_underscore(name):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 class EditView(EditorView):
 
+    @staticmethod
+    def get_related_models(model_instance):
+        model_type = type(model_instance)
+        related = list()
+        if model_type in related_info.keys():
+            for r_model_type, columns in related_info[model_type]:
+                r_model_type_column = camel_to_underscore(r_model_type.__name__)
+                records = list()
+                for r_model in getattr(model_instance, r_model_type_column).all():
+                    r = list()
+                    for column in columns:
+                        if hasattr(getattr(r_model, column), "name"):
+                            r.append(getattr(r_model, column).name)
+                        else:
+                            r.append(getattr(r_model, column))
+                    records.append((r_model.id, r))
+                related.append((r_model_type, columns, records))
+        return related
+
+ 
     @login_required
     def dispatch_request(self, id):
         cascade = []
@@ -227,6 +253,8 @@ class EditView(EditorView):
     def generic_edit(id, form, model, cascade=None):
         model_type = model
         model_instance = model.query.filter_by(id=id).first()
+        if model_instance is None:
+            return render_template('404.html'), 404
         form = populate_one_to_many_choices(form, model_instance)
         if form.validate_on_submit():
             redirect_url = app_prefix + "/view/%s" % model_type.__name__.lower()
@@ -260,9 +288,12 @@ class EditView(EditorView):
         if cascade is None:
             cascade = list()
         template_name = 'edit_%s.html' % model_type.__name__.lower()
+
+        related = EditView.get_related_models(model_instance)
+
         for template in [template_name, "edit_model.html"]:
             try:
-                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade)
+                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, related=related)
             except TemplateNotFound:
                 pass
 

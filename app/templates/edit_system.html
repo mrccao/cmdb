@@ -1,0 +1,31 @@
+{% extends "edit_model.html" %}
+{% block page_detail %}
+
+    {% for model_type, column_names, records in related %}
+        {% if records %}
+        <table class="table table-condensed table-striped table-hover text-left">
+            <thead>
+                <tr class="lead">
+                    {% for column in column_names %}
+                        {% if column != "id" %}
+                        <th class="col-sm-1">
+                            {{ column|replace("_", " ")|title }}
+                        </th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody data-link="row" class="rowlink" id="view_results">
+                {% for record_id, record_columns in records %}
+                    <tr name="{{ record_id }}">
+                        {% for record_column in record_columns %}
+                            <td><a href="/assets/edit/{{ model_type.__name__|lower }}/{{ record_id }}/">{{ record_column }}</a></td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    {% endfor %}
+ 
+{% endblock page_detail %}

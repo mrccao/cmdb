@@ -24,7 +24,7 @@ class GenericModel(object):
             if field == "id":
                 self.schema.add("model_id", whoosh.fields.ID(unique=True, stored=True))
             elif field == "name":
-                self.schema.add(field, whoosh.fields.TEXT(stored=True, field_boost=2.0))
+                self.schema.add(field, whoosh.fields.ID(stored=True, field_boost=2.0))
             else:
                 self.schema.add(field, whoosh.fields.TEXT(stored=True))
         self.schema.add("model_name", whoosh.fields.TEXT(stored=True))
@@ -281,7 +281,7 @@ class SystemCategory(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     description = db.Column(db.Text(255), unique=False)
-    image = db.Column(db.String(255), unique=False)
+    #image = db.Column(db.String(255), unique=False)
     system = db.relationship("System", backref="system_category", lazy="dynamic")
     display_fields = ["name"]
     order_by = "name"
@@ -338,7 +338,7 @@ class Hardware(db.Model, GenericModel):
     notes = db.Column(db.Text(255))
     order_by = "name"
     display_fields = ["name", "system", "vendor"]
-    cascade = [("vendor", "hardware_model"), ("country", "county")]
+    cascade = [("vendor", "hardware_model")]
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.name)
 

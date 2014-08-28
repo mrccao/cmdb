@@ -1,6 +1,7 @@
+from flask import Markup
 from flask.ext.wtf import Form
 from wtforms import Field, StringField, TextAreaField, BooleanField, SelectField,\
-    SubmitField, IntegerField, HiddenField, FileField, SelectMultipleField
+    SubmitField, IntegerField, HiddenField, FileField, SelectMultipleField, DateField
 from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from wtforms import ValidationError 
 import wtforms.widgets
@@ -35,6 +36,26 @@ class Unique(object):
         if check and (id is None or id != check.id):
             raise ValidationError(self.message)
 
+class BootstrapDateWidget(wtforms.widgets.TextInput):
+    def __init__(self, error_class=u'has_errors'):
+        super(BootstrapDateWidget, self).__init__()
+        self.error_class = error_class
+
+    def __call__(self, field, **kwargs):
+        kwargs['type'] = u'text'
+        kwargs['class'] = u'form-control date-picker'
+        kwargs['readonly'] = None
+        html = ""
+        html += '<div class="input-group" data-date-format="dd-mm-yyyy">'
+        html += '<span class="input-group-addon">'
+        html += '<span class="glyphicon glyphicon-calendar"></span>'
+        html += '</span>'
+        html += '<input %s>' % wtforms.widgets.html_params(**kwargs)
+        html += '</div>'
+        return html
+
+class bDateField(DateField):
+  widget = BootstrapDateWidget()
 
 class HardwareTypeForm(Form):
     id = HiddenField()
@@ -100,7 +121,7 @@ class SystemCategoryForm(Form):
     id = HiddenField()
     name = StringField('Name', validators=[Required(), Unique(SystemCategory, SystemCategory.name)])
     description = StringField('Description', validators=[Length(max=255)])
-    image = FileField(u'Image File')
+    #image = FileField(u'Image File')
     submit = SubmitField('Submit')
 
 
@@ -118,7 +139,6 @@ class SystemForm(Form):
     description = StringField('Description', validators=[Length(max=255)])
     submit = SubmitField('Submit')
 
-
 class HardwareForm(Form):
     id = HiddenField()
     name = StringField('Serial Number', validators=[Required(), Unique(Hardware, Hardware.name), Length(min=2, max=64)])
@@ -127,6 +147,9 @@ class HardwareForm(Form):
     vendor = SelectField('Vendor', coerce=int, )
     hardware_type = SelectField('HardwareType', coerce=int)
     hardware_model = SelectField('HardwareModel', coerce=int)
+    eos = bDateField('End of Sale')
+    eol = bDateField('End of Life')
+    location = SelectField('Location', coerce=int, )
     coordinance = StringField('Location Coordinance', validators=[Required()])
     notes = StringField('Notes', validators=[Length(max=255)])
     submit = SubmitField('Submit')

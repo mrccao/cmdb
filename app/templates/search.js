@@ -84,7 +84,7 @@ function apply_search_shortcuts() {
     $("#search").on('keydown', null, 'down', keyboard_down);
     $("#search").on('keydown', null, 'up', keyboard_up);
 
-    $("input").on('keydown', null, 'esc', function(){
+    $("input, select").on('keydown', null, 'esc', function(){
         if ($("#search").is(":focus")) {
             if ( $("#search").val().length ) {
                 $("#search").val("");

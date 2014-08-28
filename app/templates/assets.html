@@ -36,10 +36,12 @@
         {% include 'input_group.js' %}
         {% include 'search.js' %}
 
+        //input_group($(".date-picker"), "calendar");
         input_group($("input#notes"), "info-sign");
         input_group($("input#description"), "info-sign");
         input_group($("select#hardware_model"), "hdd");
         input_group($("input#asset_tag"), "tag");
         input_group($("select#software"), "floppy-disk");
+        $(".date-picker").datepicker();
     </script>
 {% endblock scripts %}
