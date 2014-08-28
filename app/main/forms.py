@@ -4,7 +4,7 @@ from wtforms import Field, StringField, TextAreaField, BooleanField, SelectField
 from wtforms.validators import Required, Length, Email, Regexp, IPAddress
 from flask.ext.pagedown.fields import PageDownField
 from ..models import L2Domain, L3Domain, System, Hardware, Vendor, HardwareModel, SystemCategory, Country, County, HardwareType, Software, SoftwareVersion, City, Street, Location
-from .custom_fields import bDateField
+from .custom_fields import bDateField, IPv4Field
 from .custom_field_validators import Unique
 
 
@@ -80,7 +80,8 @@ class SystemForm(Form):
     id = HiddenField()
     name = StringField('System Name', validators=[Required(), Unique(System, System.name), Length(min=2, max=64)])
     l3domain = SelectField('Management IP Layer 3 Domain', coerce=int, validators=[Required()])
-    management_ip = StringField('Mangement IP', validators=[Required(), IPAddress()])
+    #management_ip = StringField('Mangement IP', validators=[Required(), IPAddress()])
+    management_ip = IPv4Field('Mangement IP', validators=[Required()])
     vendor = SelectField('Vendor', coerce=int)
     software = SelectField('Software', coerce=int)
     software_version = SelectField('SoftwareVersion', coerce=int)
