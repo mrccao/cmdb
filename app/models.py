@@ -29,7 +29,9 @@ class GenericModel(object):
                 self.schema.add("model_id", whoosh.fields.ID(unique=True, stored=True))
             elif field == "name":
                 self.schema.add(field, whoosh.fields.ID(stored=True, field_boost=2.0))
-            elif inspect_model_db.column_datetype:
+            elif inspect_model_db.column_ip_type(self, field):
+                self.schema.add(field, whoosh.fields.ID(stored=True))
+            elif inspect_model_db.column_datetype(self, field):
                 self.schema.add(field, whoosh.fields.DATETIME(stored=True))
             else:
                 self.schema.add(field, whoosh.fields.TEXT(stored=True))
@@ -127,6 +129,38 @@ class GenericModel(object):
 
     def get_model_friendly_name(self):
         return re.sub("([a-z])([A-Z])","\g<1> \g<2>",self.__class__.__name__)
+
+    def get_display_fields(self):
+        """ Returns any field that should be viewable to CRUD operations on the model """
+        white_list = self.get_base_fields()
+        white_list = white_list + self.get_model_fields()
+        columns = list()
+        for column in self.get_columns():
+            if column == "id":
+                continue
+            if column in white_list:
+                columns.append(column)
+        return columns 
+
+    def get_base_fields(self):
+        """ Returns any field that is not a relation """
+        black_list = self.get_one_to_many_columns()
+        black_list = black_list + self.get_foreign_keys()
+        columns = list()
+        for column in self.get_columns():
+            if column not in black_list:
+                columns.append(column)
+        return columns
+
+    def get_model_fields(self):
+        """ Returns any field that has the Model data type """
+        columns = list()
+        for column in self.get_columns():
+            attr = getattr(self, column)
+            attr = type(attr)
+            if attr.__base__.__name__ == "Model":
+                columns.append(column)
+        return columns
 
     def get_related_model(self):        
         for column in self.__table__.foreign_keys:
@@ -381,7 +415,7 @@ class System(db.Model, GenericModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     l3domain_id = db.Column(db.Integer, db.ForeignKey("L3Domain.id"))
-    management_ip = db.Column(db.String(64))
+    management_ip = db.Column(db.String(64), info={"type": "ipaddress"})
     description = db.Column(db.Text(255), unique=False)
     system_category_id = db.Column(db.Integer, db.ForeignKey("SystemCategory.id"))
     l2domain_id = db.Column(db.Integer, db.ForeignKey("L2Domain.id"))

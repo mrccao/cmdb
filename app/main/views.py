@@ -3,25 +3,16 @@ import sys
 import inspect
 import datetime
 
-from flask import render_template, redirect, url_for, abort, flash, request, current_app, make_response, jsonify
+from flask import render_template, redirect, request, jsonify
 from flask.views import View
-from flask.ext.login import login_required, current_user
-from flask.ext.sqlalchemy import get_debug_queries
+from flask.ext.login import login_required
 from flask_sqlalchemy import Model as SqlAlchemyModel
 from . import main
 from .forms import L2DomainForm, L3DomainForm, SystemForm, VendorForm, HardwareModelForm, HardwareForm, SystemCategoryForm, CountryForm, CountyForm, HardwareTypeForm, SoftwareForm, SoftwareVersionForm, CityForm, StreetForm, LocationForm
 from .. import db
 from ..models import L2Domain, L3Domain, System, Vendor, HardwareModel, Hardware, SystemCategory, County, Country, HardwareType, Software, SoftwareVersion, City, Street, Location
-from .. import models
-from . import forms
-from wtforms.widgets import Select
 from jinja2.exceptions import TemplateNotFound
-import sqlalchemy
 from whoosh.qparser import MultifieldParser
-from whoosh.collectors import UnlimitedCollector
-import whoosh.fields
-
-from ..utilities import inspect_model_db
 
 navbar = dict()
 navbar["Organization"] = (Vendor,)
@@ -34,14 +25,27 @@ navbar["Location"] = (Country, County, City, Street, Location)
 related_info = dict()
 related_info[System] = ((Hardware, ("hardware_type", "hardware_model", "name")),)
 
-app_prefix = "/assets"
+app_prefix = "/asset"
 
 def pretty_print(text):
     text = re.sub("([a-z])([A-Z])","\g<1> \g<2>", text)
     return text.replace("_", " ")
-    
+
+@main.route('/', methods=['GET'])
+#@login_required
+def index():
+    return render_template('index.html')
+
+@main.route(app_prefix + "/models/", methods=['GET'])
+def model_index():
+    models = list()
+    for model in get_model_classes():
+        model = model.__name__.lower()
+        models.append(model)
+    return jsonify({'models': models })
+
 @main.route(app_prefix + '/instant-search/', methods=['POST'])
-@login_required
+#@login_required
 def instant_search():
     results = list()
     search_term_original = request.form["search"]
@@ -85,16 +89,6 @@ def instant_search():
         html_results += "</a></td></tr>"
     return html_results
 
-@main.route('/', methods=['GET'])
-@login_required
-def index():
-    return render_template('index.html')
-
-@main.route(app_prefix + "/", methods=['GET'])
-@login_required
-def asset_index():
-    return render_template('asset_index.html', navbar_groups=navbar)
-
 
 def get_model_from_string(model_string):
     model_string = model_string.replace("_", "")
@@ -104,7 +98,7 @@ def get_model_from_string(model_string):
             return cls
  
 @main.route(app_prefix + '/dependencies/<model>/<int:id>/', methods=['GET', 'POST'])
-@login_required
+#@login_required
 def dependencies(model, id):
     model = get_model_from_string(model)
     model_instance = model.query.filter_by(id=id).first()
@@ -119,7 +113,7 @@ def dependencies(model, id):
 
 
 @main.route(app_prefix + '/parent_child/<parent>/<child>/<parent_id>/', methods=['GET', 'POST'])
-@login_required
+#@login_required
 def parent_child(parent, child, parent_id):
     args = [parent, child, parent_id]
     options = list()
@@ -151,7 +145,6 @@ def populate_one_to_many_choices(form, model):
             choices = [(-1L, "None")]
         setattr(getattr(form, column), "choices", choices)
     return form
-
 
 
 class EditorView(View):
@@ -190,7 +183,7 @@ class EditorView(View):
 
 class AddView(EditorView):
 
-    @login_required
+    #@login_required
     def dispatch_request(self):
         cascade = []
         if hasattr(self.model, "cascade"):
@@ -215,6 +208,32 @@ class AddView(EditorView):
             except TemplateNotFound:
                 pass
 
+def prepare_model_json(model_instance):
+        """ Make a JSON friendly output of the model """
+        item = dict()
+        item["attr"] = list()
+        item["model"]  = type(model_instance).__name__
+        item["primary_key"]  = model_instance.id
+        select_columns = model_instance.get_model_fields()
+        base_fields = model_instance.get_base_fields()
+        model_fields = model_instance.get_model_fields()
+        for column in model_instance.get_columns():
+            if column == "id":
+                continue
+            if column not in base_fields and column not in model_fields:
+                continue
+            attr = dict()
+            attr["name"] = column
+            if column in base_fields:
+                attr["value"] = getattr(model_instance, column)
+                attr["type"] = type(attr["value"]).__name__.lower()
+            else:
+                attr["value"] = getattr(model_instance, column).name
+                attr["type"] = "select"
+            attr["help"] = ""
+            item["attr"].append(attr)
+        return item
+ 
 def camel_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
@@ -241,62 +260,22 @@ class EditView(EditorView):
         return related
 
  
-    @login_required
+    #@login_required
     def dispatch_request(self, id):
         cascade = []
         if hasattr(self.model, "cascade"):
             cascade = self.model.cascade
         return EditView.generic_edit(id, self.form(), self.model, cascade=cascade)
+
     @staticmethod
     def generic_edit(id, form, model, cascade=None):
-        model_type = model
         model_instance = model.query.filter_by(id=id).first()
-        if model_instance is None:
-            return render_template('404.html'), 404
-        form = populate_one_to_many_choices(form, model_instance)
-        if form.validate_on_submit():
-            redirect_url = app_prefix + "/view/%s" % model_type.__name__.lower()
-            EditView.update_row(form, model_instance)
-            return redirect(redirect_url)
-        else:
-            # Populate the form
-            for field in model_instance.get_columns():
-                if field in form.__dict__:
-                    form_field = getattr(form, field)
-                    if field in model_instance.get_one_to_many_columns():
-                        data = getattr(model_instance, field)
-                        #  Multi Select
-                        if hasattr(data, "__class__") and "InstrumentedList" in data.__class__.__name__:
-                            form_field.data = map(lambda x: x.id, data)
-                        #  Single Select
-                        else:
-                            if hasattr(data, "first"):
-                                data = data.first()
-                                if data is not None:
-                                    form_field.data = data.id
-                                else:
-                                    form_field.data = data
-                            else:
-                                if data is None:
-                                    form_field.data = "None"
-                                else:
-                                    form_field.data = data.id
-                    else:
-                        if type(getattr(model_instance, field)) is datetime.datetime:
-                            form_field.data = getattr(model_instance, field).strftime("%Y-%m-%d")
-                        else:
-                            form_field.data = getattr(model_instance, field)
-        if cascade is None:
-            cascade = list()
-        template_name = 'edit_%s.html' % model_type.__name__.lower()
-
-        related = EditView.get_related_models(model_instance)
-
-        for template in [template_name, "edit_model.html"]:
-            try:
-                return render_template(template, navbar_groups=navbar, model=model_instance, form=form, Table=model_instance, cascade=cascade, related=related)
-            except TemplateNotFound:
-                pass
+        instances = list()
+        columns = list()
+        instance = prepare_model_json(model_instance)
+        columns = model_instance.get_display_fields()
+        return jsonify({'instance':instance})
+ 
 
 class DeleteView(View):
     methods = ['GET', 'POST']
@@ -304,81 +283,35 @@ class DeleteView(View):
     def __init__(self, model):
         self.model = model
 
-    @login_required
+    #@login_required
     def dispatch_request(self, id):
         model_instance = self.model.query.filter_by(id=id).first()
         name = self.model.__name__.lower()
         redirect_url = ".view_%s" % name
         model_instance.delete_index()
         db.session.delete(model_instance)
-        return redirect(app_prefix + "/view/%s/" % name)
+        return jsonify({'status':'ok'})
 
 class ListView(View):
     methods = ['GET', 'POST']
 
     def __init__(self, model):
         self.model = model
-        self.model_instance = model()
-        self.table_view = self._table_view(self.model_instance, model.display_fields)
-        self.table_view.records = model.query.order_by(self.table_view.order.by).all()
-        if not self.table_view.order.asc:
-            self.table_view.records.reverse()
 
-    @login_required
+    #@login_required
     def dispatch_request(self):
-        return ListView.generic_list(self.model(), self.table_view.displayed)
+        return ListView.generic_list(self.model())
 
     @staticmethod
     def generic_list(model, displayed_fields=None):
-        model_type = type(model)
-        model_instance = model
-        class table_view:
-            name = type(model).__name__
-            friendly_name = model.get_model_friendly_name()
-            displayed = displayed_fields
-            if not displayed_fields:
-                displayed = list()
-                for field in model.get_columns:
-                    if field != "id":
-                        displayed.append(field)
-            class order:
-                by = "id"
-                if "name" in model.get_columns():
-                    by = "name"
-                _sort = request.args.get("sort")
-                if _sort:
-                    by = model.__dict__[_sort]
-                _asc = request.args.get("asc") or 1
-                asc = int(_asc)
-        table_view.records = model.query.order_by(table_view.order.by).all()
-        if not table_view.order.asc:
-            table_view.records.reverse()
-        return render_template('view_model.html',  navbar_groups=navbar, model=model_instance, Table=table_view)
+        instances = list()
+        columns = list()
+        for result in model.query.order_by("name").all():
+            instances.append(prepare_model_json(result))
+            if not columns:
+                columns = result.get_display_fields()
+        return jsonify({'columns': columns, 'instances':instances})
     
-    class _table_view(object):
-        def __init__(self, model, displayed_fields=None):
-            self.friendly_name = model.get_model_friendly_name()
-            self.order = self._order(model)
-            self.model = type(model)
-            self.name = type(model).__name__
-            self.displayed = displayed_fields
-
-            if not self.displayed:
-                self.displayed = list()
-                for field in dir(model):
-                    if getattr(model, field).__class__.__name__ == "InstrumentedAttribute":
-                        if field != "id":
-                            self.displayed.append(field)
-        class _order:
-            def __init__(self, model):
-                self.by = "id"
-                self.model = model
-                if hasattr(self.model, "name"):
-                    self.by = "name"
-                _sort = request.args.get("sort")
-                _asc = request.args.get("asc") or 1
-                self.asc = int(_asc)
-
 def get_form_classes():
     form_cls = list()
     for name, cls in inspect.getmembers(sys.modules["app.main.forms"]):
@@ -388,7 +321,8 @@ def get_form_classes():
             if "wtforms.ext.csrf.form.SecureForm" in base_cl and name.lower().endswith("form"):
                 form_cls.append(cls)
     return form_cls
- 
+
+
 def get_model_classes():
     model_cls = set()
     for name, cls in inspect.getmembers(sys.modules["app.models"]):
